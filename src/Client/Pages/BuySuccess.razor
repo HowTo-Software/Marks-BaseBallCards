@@ -1,0 +1,60 @@
+@page "/buy/success"
+@inject ApiClient Api
+
+<PageTitle>Thank you</PageTitle>
+
+<div class="text-center py-5">
+    @if (_loading)
+    {
+        <div class="spinner-border" role="status" aria-hidden="true"></div>
+        <p class="mt-3">Confirming your payment…</p>
+    }
+    else if (_paid)
+    {
+        <h1 class="text-success">✓ Payment received</h1>
+        <p class="lead">
+            Thanks for your purchase@(string.IsNullOrWhiteSpace(_status?.PlayerName)
+                ? "." : $" of #{_status!.CardNumber} {_status.PlayerName}.")
+        </p>
+        <a class="btn btn-primary" href="marketplace">Back to marketplace</a>
+    }
+    else
+    {
+        <h1>Payment status</h1>
+        <p class="text-muted">
+            We couldn't confirm your payment yet. If you completed checkout, it can take a moment to finalize.
+        </p>
+        <a class="btn btn-outline-primary" href="marketplace">Back to marketplace</a>
+    }
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "session_id")] public string? SessionId { get; set; }
+
+    private CheckoutStatusDto? _status;
+    private bool _loading = true;
+    private bool _paid;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrWhiteSpace(SessionId))
+        {
+            _loading = false;
+            return;
+        }
+
+        // Poll briefly to give the Stripe webhook time to finalize fulfillment.
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            _status = await Api.GetCheckoutStatusAsync(SessionId);
+            if (_status?.PaymentStatus == "paid")
+            {
+                _paid = true;
+                break;
+            }
+            await Task.Delay(1000);
+        }
+
+        _loading = false;
+    }
+}

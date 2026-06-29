@@ -1,0 +1,24 @@
+# Build artifacts
+**/bin/
+**/obj/
+**/out/
+**/publish/
+
+# Git / IDE
+.git/
+.gitignore
+.vs/
+.vscode/
+.idea/
+
+# Secrets & local env
+.env
+.env.*
+!.env.example
+
+# Docs / misc not needed in the image
+*.md
+**/*.user
+
+# Source spreadsheet (data is embedded as seed-cards.json)
+*.xlsx

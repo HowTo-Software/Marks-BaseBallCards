@@ -1,0 +1,6 @@
+@MarksBaseballCards.Api_HostAddress = http://localhost:5238
+
+GET {{MarksBaseballCards.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

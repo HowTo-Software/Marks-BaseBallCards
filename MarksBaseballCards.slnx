@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Api/">
+    <Project Path="src/Api/MarksBaseballCards.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/Client/">
+    <Project Path="src/Client/MarksBaseballCards.Client.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/MarksBaseballCards.Shared.csproj" />
+  </Folder>
+</Solution>

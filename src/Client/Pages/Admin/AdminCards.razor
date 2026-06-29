@@ -1,0 +1,344 @@
+@page "/admin"
+@attribute [Authorize(Roles = Roles.Admin)]
+@inject ApiClient Api
+@inject IJSRuntime JS
+
+<PageTitle>Admin · Cards</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center">
+    <h1>Admin · Cards</h1>
+    <button class="btn btn-success" @onclick="StartCreate">+ Add card</button>
+</div>
+
+@if (_message is not null)
+{
+    <div class="alert @(_isError ? "alert-danger" : "alert-success") mt-2">@_message</div>
+}
+
+@if (_editing is not null)
+{
+    <div class="card my-3 shadow-sm border-primary">
+        <div class="card-body">
+            <h5 class="mb-3">@(_editingId is null ? "New card" : $"Edit #{_originalNumber}")</h5>
+            <EditForm Model="_editing" OnValidSubmit="SaveAsync">
+                <DataAnnotationsValidator />
+                <div class="row g-2">
+                    <div class="col-md-3">
+                        <label class="form-label">Card #</label>
+                        <InputText class="form-control" @bind-Value="_editing.CardNumber" />
+                        <ValidationMessage For="() => _editing.CardNumber" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Player</label>
+                        <InputText class="form-control" @bind-Value="_editing.PlayerName" />
+                        <ValidationMessage For="() => _editing.PlayerName" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Doubles</label>
+                        <InputNumber class="form-control" @bind-Value="_editing.Doubles" />
+                        <ValidationMessage For="() => _editing.Doubles" />
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-1">
+                    <div class="col-md-7">
+                        <label class="form-label d-block">Sets filed</label>
+                        @for (var i = 1; i <= 6; i++)
+                        {
+                            var n = i;
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="@($"set{n}")"
+                                       checked="@GetSet(n)" @onchange="e => SetSet(n, (bool)e.Value!)" />
+                                <label class="form-check-label" for="@($"set{n}")">@n</label>
+                            </div>
+                        }
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label d-block">Flags</label>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="plastic" @bind="_editing.InPlastic" />
+                            <label class="form-check-label" for="plastic">Plastic</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="rookie" @bind="_editing.IsRookie" />
+                            <label class="form-check-label" for="rookie">Rookie</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="royals" @bind="_editing.IsRoyals" />
+                            <label class="form-check-label" for="royals">Royals</label>
+                        </div>
+                    </div>
+                </div>
+
+                <hr />
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="forsale" @bind="_editing.IsForSale" />
+                            <label class="form-check-label" for="forsale">For sale</label>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Price</label>
+                        <InputNumber class="form-control" @bind-Value="_editing.Price" />
+                        <ValidationMessage For="() => _editing.Price" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Condition</label>
+                        <InputText class="form-control" @bind-Value="_editing.Condition" />
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">Listing notes</label>
+                        <InputText class="form-control" @bind-Value="_editing.ListingNotes" />
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <button class="btn btn-primary" type="submit" disabled="@_busy">
+                        @if (_busy)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                        }
+                        Save
+                    </button>
+                    <button class="btn btn-secondary" type="button" @onclick="CancelEdit">Cancel</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<div class="d-flex gap-2 my-3">
+    <input class="form-control" style="max-width: 320px" placeholder="Search…"
+           @bind="_search" @bind:event="oninput" />
+    <span class="align-self-center text-muted small">@Filtered.Count of @_cards.Count</span>
+</div>
+
+@if (_loading)
+{
+    <p>Loading…</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>#</th><th>Player</th><th>Sets</th><th>Dbl</th>
+                    <th>Flags</th><th>Sale</th><th>Status</th><th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Filtered)
+                {
+                    <tr>
+                        <td>@c.CardNumber</td>
+                        <td>@c.PlayerName</td>
+                        <td>@c.SetsFiledCount/6</td>
+                        <td>@c.Doubles</td>
+                        <td class="text-nowrap">
+                            @if (c.InPlastic)
+                            {
+                                <span class="badge bg-light text-dark" title="In plastic">P</span>
+                            }
+                            @if (c.IsRookie)
+                            {
+                                <span class="badge bg-warning text-dark" title="Rookie">R</span>
+                            }
+                            @if (c.IsRoyals)
+                            {
+                                <span class="badge bg-info text-dark" title="Royals">KC</span>
+                            }
+                        </td>
+                        <td>@(c.IsForSale ? c.Price?.ToString("C") : "")</td>
+                        <td>
+                            @if (c.IsSold)
+                            {
+                                <span class="badge bg-secondary">Sold</span>
+                            }
+                            else if (c.IsForSale)
+                            {
+                                <span class="badge bg-success">For sale</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">—</span>
+                            }
+                        </td>
+                        <td class="text-nowrap">
+                            <button class="btn btn-sm btn-outline-primary" @onclick="() => StartEdit(c)">Edit</button>
+                            @if (!c.IsSold)
+                            {
+                                <button class="btn btn-sm btn-outline-success" @onclick="() => SellAsync(c)">Sell</button>
+                            }
+                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteAsync(c)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<CardDto> _cards = new();
+    private string _search = string.Empty;
+    private bool _loading = true;
+    private bool _busy;
+    private string? _message;
+    private bool _isError;
+
+    private CardUpsertDto? _editing;
+    private int? _editingId;
+    private string? _originalNumber;
+
+    private List<CardDto> Filtered => _cards
+        .Where(c => string.IsNullOrWhiteSpace(_search)
+                 || c.PlayerName.Contains(_search, StringComparison.OrdinalIgnoreCase)
+                 || c.CardNumber.Contains(_search, StringComparison.OrdinalIgnoreCase))
+        .ToList();
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            _cards = await Api.GetCardsAsync();
+        }
+        catch
+        {
+            Notify("Could not load cards.", isError: true);
+        }
+        _loading = false;
+    }
+
+    private void StartCreate()
+    {
+        _editing = new CardUpsertDto();
+        _editingId = null;
+        _originalNumber = null;
+        _message = null;
+    }
+
+    private void StartEdit(CardDto c)
+    {
+        _editingId = c.Id;
+        _originalNumber = c.CardNumber;
+        _editing = ToUpsert(c);
+        _message = null;
+    }
+
+    private void CancelEdit()
+    {
+        _editing = null;
+        _editingId = null;
+    }
+
+    private bool GetSet(int n) => n switch
+    {
+        1 => _editing!.InSet1,
+        2 => _editing!.InSet2,
+        3 => _editing!.InSet3,
+        4 => _editing!.InSet4,
+        5 => _editing!.InSet5,
+        6 => _editing!.InSet6,
+        _ => false
+    };
+
+    private void SetSet(int n, bool value)
+    {
+        switch (n)
+        {
+            case 1: _editing!.InSet1 = value; break;
+            case 2: _editing!.InSet2 = value; break;
+            case 3: _editing!.InSet3 = value; break;
+            case 4: _editing!.InSet4 = value; break;
+            case 5: _editing!.InSet5 = value; break;
+            case 6: _editing!.InSet6 = value; break;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        _busy = true;
+        var result = _editingId is null
+            ? await Api.CreateCardAsync(_editing!)
+            : await Api.UpdateCardAsync(_editingId.Value, _editing!);
+        _busy = false;
+
+        if (!result.Ok)
+        {
+            Notify(result.Error ?? "Save failed.", isError: true);
+            return;
+        }
+
+        Notify(_editingId is null ? "Card created." : "Card updated.", isError: false);
+        _editing = null;
+        _editingId = null;
+        await LoadAsync();
+    }
+
+    private async Task SellAsync(CardDto c)
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", $"Mark #{c.CardNumber} {c.PlayerName} as sold?"))
+        {
+            return;
+        }
+
+        var result = await Api.SellCardAsync(c.Id, new SellRequest { SoldPrice = c.Price });
+        if (!result.Ok)
+        {
+            Notify(result.Error ?? "Could not record sale.", isError: true);
+            return;
+        }
+
+        Notify($"Marked #{c.CardNumber} as sold.", isError: false);
+        await LoadAsync();
+    }
+
+    private async Task DeleteAsync(CardDto c)
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", $"Delete #{c.CardNumber} {c.PlayerName}? This cannot be undone."))
+        {
+            return;
+        }
+
+        var result = await Api.DeleteCardAsync(c.Id);
+        if (!result.Ok)
+        {
+            Notify(result.Error ?? "Could not delete card.", isError: true);
+            return;
+        }
+
+        Notify($"Deleted #{c.CardNumber}.", isError: false);
+        await LoadAsync();
+    }
+
+    private static CardUpsertDto ToUpsert(CardDto c) => new()
+    {
+        CardNumber = c.CardNumber,
+        PlayerName = c.PlayerName,
+        InPlastic = c.InPlastic,
+        InSet1 = c.InSet1,
+        InSet2 = c.InSet2,
+        InSet3 = c.InSet3,
+        InSet4 = c.InSet4,
+        InSet5 = c.InSet5,
+        InSet6 = c.InSet6,
+        Doubles = c.Doubles,
+        IsRookie = c.IsRookie,
+        IsRoyals = c.IsRoyals,
+        IsForSale = c.IsForSale,
+        Price = c.Price,
+        Condition = c.Condition,
+        ListingNotes = c.ListingNotes
+    };
+
+    private void Notify(string message, bool isError)
+    {
+        _message = message;
+        _isError = isError;
+    }
+}

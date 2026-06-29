@@ -1,0 +1,53 @@
+﻿@page "/"
+
+<PageTitle>Mark's Baseball Cards</PageTitle>
+
+<h1>⚾ Mark's Baseball Cards</h1>
+<p class="lead">The 1991 Topps set — 40 years of baseball, now buyable online.</p>
+
+<div class="row g-3 mt-2">
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Browse the marketplace</h5>
+                <p class="card-text">See which cards are for sale, check condition and price, and buy securely with Stripe.</p>
+                <a class="btn btn-primary" href="marketplace">Shop cards</a>
+            </div>
+        </div>
+    </div>
+    <AuthorizeView Roles="@Roles.Admin" Context="adminCtx">
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Manage inventory</h5>
+                    <p class="card-text">Add, edit, list for sale, and record sales across the whole collection.</p>
+                    <a class="btn btn-outline-primary" href="admin">Open admin</a>
+                </div>
+            </div>
+        </div>
+    </AuthorizeView>
+    <AuthorizeView Roles="@Roles.SystemAdmin" Context="sysCtx">
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">System dashboard</h5>
+                    <p class="card-text">Review collection statistics, set completion, and the full activity history.</p>
+                    <a class="btn btn-outline-primary" href="system">Open dashboard</a>
+                </div>
+            </div>
+        </div>
+    </AuthorizeView>
+    <AuthorizeView>
+        <NotAuthorized>
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm border-secondary">
+                    <div class="card-body">
+                        <h5 class="card-title">Staff sign in</h5>
+                        <p class="card-text">Admins and system operators can sign in to manage cards and view statistics.</p>
+                        <a class="btn btn-outline-secondary" href="login">Sign in</a>
+                    </div>
+                </div>
+            </div>
+        </NotAuthorized>
+    </AuthorizeView>
+</div>

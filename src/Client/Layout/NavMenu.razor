@@ -1,0 +1,81 @@
+﻿<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">⚾ Mark's Baseball Cards</a>
+        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>
+
+<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
+    <nav class="nav flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="marketplace">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Marketplace
+            </NavLink>
+        </div>
+
+        <AuthorizeView Roles="@Roles.Admin">
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="admin">
+                    <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Admin · Cards
+                </NavLink>
+            </div>
+        </AuthorizeView>
+
+        <AuthorizeView Roles="@Roles.SystemAdmin">
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="system">
+                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> System · Stats
+                </NavLink>
+            </div>
+        </AuthorizeView>
+
+        <hr class="mx-3 text-secondary" />
+
+        <AuthorizeView>
+            <Authorized>
+                <div class="nav-item px-3 py-1 small text-secondary">
+                    Signed in as <strong class="text-white">@context.User.Identity?.Name</strong>
+                </div>
+                <div class="nav-item px-3">
+                    <button class="nav-link btn btn-link text-start p-0 ps-0" @onclick="LogoutAsync">
+                        <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Sign out
+                    </button>
+                </div>
+            </Authorized>
+            <NotAuthorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="login">
+                        <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Admin sign in
+                    </NavLink>
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>
+    </nav>
+</div>
+
+@code {
+    [Inject] private ClientAuthService Auth { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    private bool collapseNavMenu = true;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    private async Task LogoutAsync()
+    {
+        await Auth.LogoutAsync();
+        Nav.NavigateTo("");
+    }
+}

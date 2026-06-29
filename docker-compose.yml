@@ -1,0 +1,21 @@
+# Mark's Baseball Cards - web tier.
+# The T-SQL database is your existing SQL Server at 192.168.1.212, so no db
+# service is defined here. All secrets are supplied via the gitignored .env file.
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: src/Api/Dockerfile
+    image: marks-baseball-cards
+    container_name: marks-baseball-cards
+    ports:
+      # host 8090 -> container 8080 (avoids other containers on this host)
+      - "8090:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+    # Connection string, JWT key, Stripe keys and seed passwords come from .env
+    env_file:
+      - .env
+    restart: unless-stopped
