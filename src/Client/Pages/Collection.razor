@@ -1,0 +1,82 @@
+@page "/collection"
+@inject CollectionCatalog Catalog
+
+<PageTitle>@L["The collection — Mark’s Baseball Cards"]</PageTitle>
+<section class="page-intro container-width"><p class="eyebrow">@L["1991 Topps / Original checklist"]</p><div class="page-title-row"><h1>@L["The"] <em>@L["collection."]</em></h1><span class="edition-label">@L["64 RECORDS"]<br />@L["ONE GREAT YEAR"]</span></div><p>@L["A familiar name. A missing number. Find your way through Mark’s original archive, one card at a time."]</p></section>
+<section class="container-width collection-content">
+    <div class="browse-toolbar">
+        <div class="search-field"><Icon Name="search" /><input aria-label="@(L["Search collection by player or card number"])" type="search" placeholder="@(L["Find a player or card number..."])" @bind="_search" @bind:event="oninput" /></div>
+        <div class="toolbar-right"><label for="collection-sort" class="sr-only">@L["Sort collection"]</label><select id="collection-sort" @bind="_sort"><option value="number">@L["Card number"]</option><option value="name">@L["Player A–Z"]</option></select><div class="view-switch" aria-label="@(L["Collection layout"])"><button class="@(!_list ? "selected" : "")" aria-label="@(L["Grid view"])" aria-pressed="@(!_list)" @onclick="() => _list = false"><Icon Name="grid" Size="18" /></button><button class="@(_list ? "selected" : "")" aria-label="@(L["List view"])" aria-pressed="@_list" @onclick="() => _list = true"><Icon Name="list" Size="18" /></button></div></div>
+    </div>
+    <div class="browse-subbar"><div class="filter-chips" aria-label="@(L["Collection category"])">@foreach (var filter in _filters) { var value = filter; <button class="filter-chip @(_filter == value ? "selected" : "")" aria-pressed="@(_filter == value)" @onclick="() => _filter = value">@L[value]</button> }</div><span class="results-count" role="status">@L.Format("{0} of {1} records", Filtered.Count, _records.Count)</span></div>
+    @if (_loading)
+    {
+        <div class="catalog-grid" aria-label="@(L["Loading collection"])">@for (var i = 0; i < 8; i++) { <div class="card-skeleton"><div></div><span></span><span></span></div> }</div>
+    }
+    else if (_error)
+    {
+        <div class="empty-state"><Icon Name="info" Size="32" /><h2>@L["The archive couldn’t load."]</h2><p>@L["Give it another try in a moment."]</p><button class="button button-primary" @onclick="LoadAsync">@L["Try again"] <Icon Name="refresh" /></button></div>
+    }
+    else if (Filtered.Count == 0)
+    {
+        <div class="empty-state"><Icon Name="search" Size="32" /><h2>@L["No cards found."]</h2><p>@L["Try another player, a card number, or a different category."]</p><button class="button button-outline" @onclick="ResetFilters">@L["Clear filters"] <Icon Name="arrow" /></button></div>
+    }
+    else
+    {
+        <div class="catalog-grid @(_list ? "catalog-list" : "")">
+            @foreach (var card in Filtered)
+            {
+                <button class="collection-card" @key="card.CardNumber" @onclick="() => ShowDetailsAsync(card)">
+                    <div class="card-art-wrap"><CardArt Number="@card.CardNumber" PlayerName="@card.PlayerName" /><span class="card-open"><Icon Name="up-right" /></span></div>
+                    <div class="collection-card-info"><div class="card-meta"><span>1991 TOPPS</span><span>#@card.CardNumber</span></div><h3>@card.PlayerName</h3><div class="card-tags">@if (card.IsRookie) { <span class="tag tag-rookie">@L["Rookie marker"]</span> } @if (card.IsRoyals) { <span class="tag tag-royals">@L["Royals"]</span> } @if (!card.IsRookie && !card.IsRoyals) { <span class="tag">@L["Original checklist"]</span> }</div></div>
+                </button>
+            }
+        </div>
+    }
+    <div class="archive-notice"><Icon Name="info" Size="18" /><p>@L["This is the original checklist, not live sale inventory. Covers are illustrated record artwork. Category markers are preserved from the source."] <a href="about#collection-notes">@L["Read the collection notes."]</a></p></div>
+</section>
+
+<Modal @ref="_modal" Title="@(L["From the original checklist"])">
+    @if (_selected is not null)
+    {
+        <div class="detail-grid"><CardArt Number="@_selected.CardNumber" PlayerName="@_selected.PlayerName" /><div class="detail-copy"><p class="eyebrow">@L.Format("1991 Topps / No. {0}", _selected.CardNumber)</p><h2>@_selected.PlayerName</h2><div class="card-tags">@if (_selected.IsRookie) { <span class="tag tag-rookie">@L["Rookie marker"]</span> } @if (_selected.IsRoyals) { <span class="tag tag-royals">@L["Royals"]</span> }</div><p>@L["A record from Mark’s original 1991 Topps checklist. This archive entry does not indicate current stock, price or card condition."]</p><dl class="detail-facts"><div><dt>@L["Edition"]</dt><dd>1991 Topps</dd></div><div><dt>@L["Card number"]</dt><dd>#@_selected.CardNumber</dd></div><div><dt>@L["Image"]</dt><dd>@L["Illustrated record cover"]</dd></div></dl><a class="button button-primary" href="@($"marketplace?card={Uri.EscapeDataString(_selected.CardNumber)}")">@L["Check live availability"] <Icon Name="up-right" /></a></div></div>
+    }
+</Modal>
+
+@code {
+    [SupplyParameterFromQuery(Name = "card")] public string? CardNumber { get; set; }
+    private List<CollectionRecord> _records = [];
+    private readonly string[] _filters = ["All cards", "Rookie markers", "Royals"];
+    private string _search = "", _sort = "number", _filter = "All cards";
+    private bool _loading = true, _error, _list, _openFromQuery;
+    private CollectionRecord? _selected;
+    private Modal? _modal;
+    private List<CollectionRecord> Filtered
+    {
+        get
+        {
+            var records = _records.Where(c => (string.IsNullOrWhiteSpace(_search) || c.PlayerName.Contains(_search, StringComparison.OrdinalIgnoreCase) || c.CardNumber.Contains(_search.TrimStart('#'), StringComparison.OrdinalIgnoreCase)) && (_filter != "Rookie markers" || c.IsRookie) && (_filter != "Royals" || c.IsRoyals));
+            return (_sort == "name" ? records.OrderBy(c => c.PlayerName) : records.OrderBy(c => int.TryParse(c.CardNumber, out var n) ? n : int.MaxValue).ThenBy(c => c.CardNumber)).ToList();
+        }
+    }
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+    protected override void OnParametersSet() => _openFromQuery = !string.IsNullOrWhiteSpace(CardNumber);
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_openFromQuery && !_loading && _modal is not null)
+        {
+            _openFromQuery = false;
+            var record = _records.FirstOrDefault(c => c.CardNumber == CardNumber);
+            if (record is not null) await ShowDetailsAsync(record);
+        }
+    }
+    private async Task LoadAsync()
+    {
+        _loading = true; _error = false;
+        try { _records = await Catalog.GetAsync(); }
+        catch { _error = true; }
+        finally { _loading = false; }
+    }
+    private async Task ShowDetailsAsync(CollectionRecord card) { _selected = card; StateHasChanged(); if (_modal is not null) await _modal.OpenAsync(); }
+    private void ResetFilters() { _search = ""; _filter = "All cards"; }
+}

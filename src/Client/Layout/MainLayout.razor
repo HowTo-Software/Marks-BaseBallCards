@@ -1,37 +1,56 @@
-﻿@inherits LayoutComponentBase
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
+@inherits LayoutComponentBase
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@inject UiPreferences L
+
+<a class="skip-link" href="#main-content">@L["Skip to content"]</a>
+<NavMenu />
+<main id="main-content" tabindex="-1">
+    <ErrorBoundary @ref="_errorBoundary">
+        <ChildContent>@Body</ChildContent>
+        <ErrorContent>
+            <section class="state-page container-width"><span class="state-symbol"><Icon Name="info" Size="32" /></span><p class="eyebrow">@L["A little interruption"]</p><h1>@L["Let’s try that again."]</h1><p>@L["This page could not be displayed. Give it another try."]</p><button class="button button-primary" @onclick="Recover">@L["Try again"] <Icon Name="refresh" /></button></section>
+        </ErrorContent>
+    </ErrorBoundary>
+</main>
+<footer class="site-footer">
+    <div class="container-width footer-top">
+        <div><a class="brand footer-brand" href="" aria-label="@(L["Mark's Baseball Cards home"])"><span class="brand-mark"><Icon Name="baseball" Size="30" /></span><span>mark’s<span class="brand-subtitle">BASEBALL CARDS</span></span></a><p>@L["A collection of cards."]<br />@L["A lifetime of baseball."]</p></div>
+        <div class="footer-links"><span class="eyebrow">@L["Explore"]</span><a href="collection">@L["The collection"]</a><a href="marketplace">@L["Marketplace"]</a><a href="about">@L["Our story"]</a></div>
+        <div class="footer-note"><span class="eyebrow">@L["From the archive"]</span><p>@L["1991 Topps. Forty years of baseball."]<br />@L["One collector’s personal checklist."]</p><a href="about#collection-notes" class="text-link">@L["A note on the collection"] <Icon Name="up-right" Size="16" /></a></div>
     </div>
-
-    <main>
-        <div class="top-row px-4">
-            <a href="marketplace">Marketplace</a>
-        </div>
-
-        <article class="content px-4">
-            <ErrorBoundary @ref="_errorBoundary">
-                <ChildContent>
-                    @Body
-                </ChildContent>
-                <ErrorContent>
-                    <div class="container py-5 text-center">
-                        <div class="display-4">⚠️</div>
-                        <h1 class="h4">Something went wrong on this page</h1>
-                        <p class="text-muted">An unexpected error occurred while displaying this content.</p>
-                        <button class="btn btn-primary" @onclick="Recover">Try again</button>
-                    </div>
-                </ErrorContent>
-            </ErrorBoundary>
-        </article>
-    </main>
-</div>
+    <div class="container-width footer-bottom"><span>© @DateTime.UtcNow.Year Mark’s Baseball Cards</span><span>@L["Experience by"] <strong>HTS</strong></span><span class="motion-credit">@L["Motion references:"] <a href="https://www.originkit.dev/" target="_blank" rel="noopener noreferrer">OriginKit</a> · <a href="https://skiper-ui.com/components" target="_blank" rel="noopener noreferrer">Skiper UI</a></span></div>
+</footer>
 
 @code {
     private ErrorBoundary? _errorBoundary;
-
-    // Clear any captured error whenever the user navigates to a new page.
+    private IJSObjectReference? _module;
+    protected override void OnInitialized() { Nav.LocationChanged += OnLocationChanged; L.Changed += RefreshCopy; }
+    private void RefreshCopy() => _ = InvokeAsync(StateHasChanged);
     protected override void OnParametersSet() => _errorBoundary?.Recover();
-
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/ui.js");
+            await _module.InvokeVoidAsync("initialize");
+        }
+    }
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) => _ = InvokeAsync(async () =>
+    {
+        _errorBoundary?.Recover();
+        if (_module is not null) await _module.InvokeVoidAsync("onNavigate");
+    });
     private void Recover() => _errorBoundary?.Recover();
+    public async ValueTask DisposeAsync()
+    {
+        Nav.LocationChanged -= OnLocationChanged;
+        L.Changed -= RefreshCopy;
+        if (_module is not null)
+        {
+            await _module.InvokeVoidAsync("dispose");
+            await _module.DisposeAsync();
+        }
+    }
 }

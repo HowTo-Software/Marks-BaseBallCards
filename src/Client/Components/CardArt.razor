@@ -1,0 +1,13 @@
+<div class="card-art art-@Tone" role="img" aria-label="@L.Format("Illustrated collection record for {0}, card {1}. Not a photograph of the card.", PlayerName, Number)">
+    <div class="art-topline"><span>@L["MARK’S COLLECTION"]</span><span>@L.Format("No. {0}", Number)</span></div>
+    <div class="art-diamond" aria-hidden="true"></div>
+    <div class="art-ball" aria-hidden="true"><Icon Name="baseball" Size="112" /></div>
+    <div class="art-year" aria-hidden="true">19<span>91</span></div>
+    <div class="art-bottomline"><span>@L["BASEBALL / TOPPS"]</span><span>@L["COLLECTION RECORD"]</span></div>
+</div>
+
+@code {
+    [Parameter] public string Number { get; set; } = "1";
+    [Parameter] public string PlayerName { get; set; } = "";
+    private int Tone => Number.Aggregate(0, (sum, c) => sum + c) % 4;
+}

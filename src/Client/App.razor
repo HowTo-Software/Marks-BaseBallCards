@@ -1,4 +1,4 @@
-﻿<CascadingAuthenticationState>
+<CascadingAuthenticationState>
     <Router AppAssembly="@typeof(App).Assembly">
         <Found Context="routeData">
             <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
@@ -9,13 +9,11 @@
                     }
                     else
                     {
-                        <LayoutView Layout="@typeof(MainLayout)">
-                            <AccessDenied />
-                        </LayoutView>
+                        <AccessDenied />
                     }
                 </NotAuthorized>
                 <Authorizing>
-                    <div class="p-4 text-muted">Checking your access…</div>
+                    <div class="state-page container-width"><span class="spinner" role="status" aria-label="@(L["Checking staff access"])"></span><p>@L["Checking your access…"]</p></div>
                 </Authorizing>
             </AuthorizeRouteView>
             <FocusOnNavigate RouteData="@routeData" Selector="h1" />

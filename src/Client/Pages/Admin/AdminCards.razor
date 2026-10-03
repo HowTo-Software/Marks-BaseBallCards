@@ -1,344 +1,143 @@
 @page "/admin"
 @attribute [Authorize(Roles = Roles.Admin)]
 @inject ApiClient Api
-@inject IJSRuntime JS
 
-<PageTitle>Admin · Cards</PageTitle>
-
-<div class="d-flex justify-content-between align-items-center">
-    <h1>Admin · Cards</h1>
-    <button class="btn btn-success" @onclick="StartCreate">+ Add card</button>
-</div>
-
-@if (_message is not null)
-{
-    <div class="alert @(_isError ? "alert-danger" : "alert-success") mt-2">@_message</div>
-}
-
-@if (_editing is not null)
-{
-    <div class="card my-3 shadow-sm border-primary">
-        <div class="card-body">
-            <h5 class="mb-3">@(_editingId is null ? "New card" : $"Edit #{_originalNumber}")</h5>
+<PageTitle>@L["Manage cards — Mark’s Baseball Cards"]</PageTitle>
+<section class="workspace container-width">
+    <div class="workspace-heading"><div><p class="eyebrow">@L["Collection workspace"]</p><h1>@L["Every card,"] <em>@L["in place."]</em></h1><p>@L["Maintain the inventory, update listings and record sales."]</p></div><button class="button button-primary" disabled="@_busy" @onclick="StartCreate">@L["Add a card"] <Icon Name="plus" Size="18" /></button></div>
+    @if (_message is not null) { <div class="inline-notice @(_isError ? "notice-error" : "")" role="status"><Icon Name="@(_isError ? "info" : "check")" Size="18" /><span>@L.Format(_message, _messageArgs)</span><button class="icon-button" aria-label="@(L["Dismiss message"])" @onclick="() => _message = null"><Icon Name="close" Size="18" /></button></div> }
+    @if (!_loading && !_loadFailed)
+    {
+        <div class="workspace-summary"><div class="summary-item"><strong>@_cards.Count</strong><span>@L["Inventory records"]</span></div><div class="summary-item"><strong>@_cards.Count(c => c.IsForSale && !c.IsSold)</strong><span>@L["Available listings"]</span></div><div class="summary-item"><strong>@_cards.Count(c => c.IsSold)</strong><span>@L["Sold cards"]</span></div><div class="summary-item"><strong>@_cards.Sum(c => c.Doubles)</strong><span>@L["Recorded doubles"]</span></div></div>
+    }
+    @if (_editing is not null)
+    {
+        <div class="workspace-panel"><div class="panel-heading"><div><p class="eyebrow">@L["Inventory editor"]</p><h2>@(_editingId is null ? L["A new addition."] : L.Format("Editing card #{0}.", _originalNumber))</h2></div><button class="icon-button" aria-label="@(L["Close editor"])" @onclick="CancelEdit" disabled="@_busy"><Icon Name="close" /></button></div>
             <EditForm Model="_editing" OnValidSubmit="SaveAsync">
                 <DataAnnotationsValidator />
-                <div class="row g-2">
-                    <div class="col-md-3">
-                        <label class="form-label">Card #</label>
-                        <InputText class="form-control" @bind-Value="_editing.CardNumber" />
-                        <ValidationMessage For="() => _editing.CardNumber" />
+                <fieldset disabled="@_busy">
+                    <div class="field-grid"><div><label class="form-label" for="card-number">@L["Card number"]</label><InputText id="card-number" class="form-control" @bind-Value="_editing.CardNumber" /><LocalizedValidationMessage For="() => _editing.CardNumber" /></div><div><label class="form-label" for="player-name">@L["Player name"]</label><InputText id="player-name" class="form-control" @bind-Value="_editing.PlayerName" /><LocalizedValidationMessage For="() => _editing.PlayerName" /></div><div><label class="form-label" for="doubles">@L["Doubles"]</label><InputNumber id="doubles" class="form-control" @bind-Value="_editing.Doubles" /><LocalizedValidationMessage For="() => _editing.Doubles" /></div>
+                        <div class="field-wide"><span class="form-label">@L["Filing sets"]</span><div class="checkbox-group">@for (var i = 1; i <= 6; i++) { var n = i; <label for="@($"filing-set-{n}")"><input type="checkbox" id="@($"filing-set-{n}")" checked="@GetSet(n)" @onchange="e => SetSet(n, (bool)e.Value!)" /> @L.Format("Set {0}", n)</label> }</div></div><div><span class="form-label">@L["Collector markers"]</span><div class="checkbox-group"><label><input type="checkbox" @bind="_editing.InPlastic" /> @L["In plastic"]</label><label><input type="checkbox" @bind="_editing.IsRookie" /> @L["Rookie"]</label><label><input type="checkbox" @bind="_editing.IsRoyals" /> @L["Royals"]</label></div></div>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Player</label>
-                        <InputText class="form-control" @bind-Value="_editing.PlayerName" />
-                        <ValidationMessage For="() => _editing.PlayerName" />
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Doubles</label>
-                        <InputNumber class="form-control" @bind-Value="_editing.Doubles" />
-                        <ValidationMessage For="() => _editing.Doubles" />
-                    </div>
-                </div>
-
-                <div class="row g-3 mt-1">
-                    <div class="col-md-7">
-                        <label class="form-label d-block">Sets filed</label>
-                        @for (var i = 1; i <= 6; i++)
-                        {
-                            var n = i;
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" id="@($"set{n}")"
-                                       checked="@GetSet(n)" @onchange="e => SetSet(n, (bool)e.Value!)" />
-                                <label class="form-check-label" for="@($"set{n}")">@n</label>
-                            </div>
-                        }
-                    </div>
-                    <div class="col-md-5">
-                        <label class="form-label d-block">Flags</label>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="checkbox" id="plastic" @bind="_editing.InPlastic" />
-                            <label class="form-check-label" for="plastic">Plastic</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="checkbox" id="rookie" @bind="_editing.IsRookie" />
-                            <label class="form-check-label" for="rookie">Rookie</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="checkbox" id="royals" @bind="_editing.IsRoyals" />
-                            <label class="form-check-label" for="royals">Royals</label>
-                        </div>
-                    </div>
-                </div>
-
-                <hr />
-                <div class="row g-2 align-items-end">
-                    <div class="col-md-2">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="forsale" @bind="_editing.IsForSale" />
-                            <label class="form-check-label" for="forsale">For sale</label>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Price</label>
-                        <InputNumber class="form-control" @bind-Value="_editing.Price" />
-                        <ValidationMessage For="() => _editing.Price" />
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Condition</label>
-                        <InputText class="form-control" @bind-Value="_editing.Condition" />
-                    </div>
-                    <div class="col-md-5">
-                        <label class="form-label">Listing notes</label>
-                        <InputText class="form-control" @bind-Value="_editing.ListingNotes" />
-                    </div>
-                </div>
-
-                <div class="mt-3">
-                    <button class="btn btn-primary" type="submit" disabled="@_busy">
-                        @if (_busy)
-                        {
-                            <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
-                        }
-                        Save
-                    </button>
-                    <button class="btn btn-secondary" type="button" @onclick="CancelEdit">Cancel</button>
-                </div>
+                    <hr class="form-divider" />
+                    <div class="field-grid"><div><span class="form-label">@L["Listing visibility"]</span><label class="checkbox-label"><input type="checkbox" @bind="_editing.IsForSale" /> @L["List in marketplace"]</label></div><div><label class="form-label" for="card-price">@L["Price (USD)"]</label><InputNumber id="card-price" class="form-control" @bind-Value="_editing.Price" step="0.01" /><LocalizedValidationMessage For="() => _editing.Price" /></div><div><label class="form-label" for="card-condition">@L["Condition"]</label><InputText id="card-condition" class="form-control" @bind-Value="_editing.Condition" maxlength="60" /><LocalizedValidationMessage For="() => _editing.Condition" /></div><div class="field-full"><label class="form-label" for="listing-notes">@L["Listing notes"]</label><InputTextArea id="listing-notes" class="form-control" @bind-Value="_editing.ListingNotes" rows="3" maxlength="500" /><LocalizedValidationMessage For="() => _editing.ListingNotes" /></div></div>
+                    @if (_isError && _message is not null) { <p class="form-error" role="alert">@L.Format(_message, _messageArgs)</p> }
+                    <div class="form-actions"><button class="button button-primary" type="submit">@L[_busy ? "Saving..." : "Save card"] <Icon Name="check" Size="18" /></button><button class="button button-outline" type="button" @onclick="CancelEdit">@L["Cancel"]</button></div>
+                </fieldset>
             </EditForm>
         </div>
-    </div>
-}
-
-<div class="d-flex gap-2 my-3">
-    <input class="form-control" style="max-width: 320px" placeholder="Search…"
-           @bind="_search" @bind:event="oninput" />
-    <span class="align-self-center text-muted small">@Filtered.Count of @_cards.Count</span>
-</div>
-
-@if (_loading)
-{
-    <p>Loading…</p>
-}
-else
-{
-    <div class="table-responsive">
-        <table class="table table-sm table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>#</th><th>Player</th><th>Sets</th><th>Dbl</th>
-                    <th>Flags</th><th>Sale</th><th>Status</th><th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var c in Filtered)
-                {
-                    <tr>
-                        <td>@c.CardNumber</td>
-                        <td>@c.PlayerName</td>
-                        <td>@c.SetsFiledCount/6</td>
-                        <td>@c.Doubles</td>
-                        <td class="text-nowrap">
-                            @if (c.InPlastic)
-                            {
-                                <span class="badge bg-light text-dark" title="In plastic">P</span>
-                            }
-                            @if (c.IsRookie)
-                            {
-                                <span class="badge bg-warning text-dark" title="Rookie">R</span>
-                            }
-                            @if (c.IsRoyals)
-                            {
-                                <span class="badge bg-info text-dark" title="Royals">KC</span>
-                            }
-                        </td>
-                        <td>@(c.IsForSale ? c.Price?.ToString("C") : "")</td>
-                        <td>
-                            @if (c.IsSold)
-                            {
-                                <span class="badge bg-secondary">Sold</span>
-                            }
-                            else if (c.IsForSale)
-                            {
-                                <span class="badge bg-success">For sale</span>
-                            }
-                            else
-                            {
-                                <span class="text-muted">—</span>
-                            }
-                        </td>
-                        <td class="text-nowrap">
-                            <button class="btn btn-sm btn-outline-primary" @onclick="() => StartEdit(c)">Edit</button>
-                            @if (!c.IsSold)
-                            {
-                                <button class="btn btn-sm btn-outline-success" @onclick="() => SellAsync(c)">Sell</button>
-                            }
-                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteAsync(c)">Delete</button>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-}
+    }
+    <div class="browse-toolbar"><div class="search-field"><Icon Name="search" /><input type="search" aria-label="@(L["Search inventory by player or card number"])" placeholder="@(L["Find a card in the inventory..."])" @bind="_search" @bind:event="oninput" /></div><div class="toolbar-right"><label class="sr-only" for="inventory-status">@L["Filter by status"]</label><select id="inventory-status" @bind="_status"><option value="all">@L["All inventory"]</option><option value="listed">@L["For sale"]</option><option value="sold">@L["Sold"]</option><option value="collection">@L["Collection only"]</option></select><button class="icon-button" disabled="@(_loading || _busy)" aria-label="@(L["Refresh inventory"])" @onclick="LoadAsync"><Icon Name="refresh" /></button></div></div>
+    <div class="browse-subbar"><span class="eyebrow">@L["Inventory / 1991 Topps"]</span><span class="results-count" role="status">@(_loading ? L["Loading inventory..."] : _loadFailed ? L["Inventory unavailable"] : L.Format("{0} of {1} records", Filtered.Count, _cards.Count))</span></div>
+    @if (_loading)
+    {
+        <div class="empty-state"><span class="spinner" role="status" aria-label="@(L["Loading inventory"])"></span><p>@L["Getting the inventory ready."]</p></div>
+    }
+    else if (_loadFailed)
+    {
+        <div class="empty-state"><Icon Name="info" Size="30" /><h2>@L["The inventory couldn’t load."]</h2><p>@L["Check your connection and sign-in, then give it another try."]</p><button class="button button-primary" @onclick="LoadAsync">@L["Try again"] <Icon Name="refresh" /></button></div>
+    }
+    else if (Filtered.Count == 0)
+    {
+        <div class="empty-state"><Icon Name="search" Size="30" /><h2>@L["No cards to show."]</h2><p>@L[_cards.Count == 0 ? "Add the first card to start this inventory." : "Try another search or change the status filter."]</p><button class="button button-outline" @onclick="ResetFilters">@L["Clear filters"]</button></div>
+    }
+    else
+    {
+        <div class="data-table-shell"><table class="data-table"><caption>@L["Live inventory. “Filed” counts the six filing sets for each record. Displayed prices are in USD."]</caption><thead><tr><th scope="col">@L["Card"]</th><th scope="col">@L["Player"]</th><th scope="col">@L["Filed"]</th><th scope="col">@L["Doubles"]</th><th scope="col">@L["Markers"]</th><th scope="col">@L["Price"]</th><th scope="col">@L["Status"]</th><th scope="col">@L["Actions"]</th></tr></thead><tbody>
+            @foreach (var card in Filtered)
+            {
+                <tr @key="card.Id"><td>#@card.CardNumber</td><td class="player-cell">@card.PlayerName</td><td>@card.SetsFiledCount / 6</td><td>@card.Doubles</td><td>@if (card.InPlastic) { <span class="tag" title="@(L["Stored in plastic"])">P</span> } @if (card.IsRookie) { <span class="tag tag-rookie" title="@(L["Rookie marker"])">R</span> } @if (card.IsRoyals) { <span class="tag tag-royals" title="@(L["Royals marker"])">KC</span> }</td><td>@(card.IsForSale ? L.Usd(card.Price, "Not set") : "—")</td><td><span class="status-tag @(card.IsSold ? "sold" : card.IsForSale ? "available" : "")">@L[card.IsSold ? "Sold" : card.IsForSale ? "For sale" : "Collection"]</span></td><td><div class="table-actions"><button class="table-action" disabled="@_busy" aria-label="@L.Format("Edit {0}, card {1}", card.PlayerName, card.CardNumber)" @onclick="() => StartEdit(card)">@L["Edit"]</button>@if (!card.IsSold) { <button class="table-action" disabled="@_busy" aria-label="@L.Format("Mark {0}, card {1} as sold", card.PlayerName, card.CardNumber)" @onclick="() => ConfirmAsync(card, false)">@L["Mark sold"]</button> }<button class="table-action danger" disabled="@_busy" aria-label="@L.Format("Delete {0}, card {1}", card.PlayerName, card.CardNumber)" @onclick="() => ConfirmAsync(card, true)">@L["Delete"]</button></div></td></tr>
+            }
+        </tbody></table></div>
+    }
+</section>
+<Modal @ref="_confirmation" Title="@(L["Confirm inventory change"])">
+    @if (_pending is not null)
+    {
+        <div class="confirm-body"><h2>@L[_deletePending ? "Remove this record?" : "Record this sale?"]</h2><p><strong>#@_pending.CardNumber · @_pending.PlayerName</strong></p><p>@(_deletePending ? L["This removes the inventory record. The action cannot be undone."] : L.Format("The card will be marked as sold and removed from available listings. Recorded sale price: {0} USD.", L.Usd(_pending.Price, "Not set")))</p><div class="form-actions"><button class="button button-outline" @onclick="() => _confirmation!.CloseAsync()">@L["Keep as is"]</button><button class="button button-primary" disabled="@_busy" @onclick="ApplyConfirmedAsync">@L[_deletePending ? "Delete record" : "Mark as sold"] <Icon Name="check" Size="18" /></button></div></div>
+    }
+</Modal>
 
 @code {
-    private List<CardDto> _cards = new();
-    private string _search = string.Empty;
-    private bool _loading = true;
-    private bool _busy;
-    private string? _message;
-    private bool _isError;
-
+    private List<CardDto> _cards = [];
+    private string _search = "", _status = "all";
+    private bool _loading = true, _loadFailed, _busy, _isError, _deletePending;
+    private string? _message, _originalNumber;
+    private object?[] _messageArgs = [];
     private CardUpsertDto? _editing;
     private int? _editingId;
-    private string? _originalNumber;
-
-    private List<CardDto> Filtered => _cards
-        .Where(c => string.IsNullOrWhiteSpace(_search)
-                 || c.PlayerName.Contains(_search, StringComparison.OrdinalIgnoreCase)
-                 || c.CardNumber.Contains(_search, StringComparison.OrdinalIgnoreCase))
-        .ToList();
-
+    private CardDto? _pending;
+    private Modal? _confirmation;
+    private List<CardDto> Filtered => _cards.Where(c => (string.IsNullOrWhiteSpace(_search) || c.PlayerName.Contains(_search, StringComparison.OrdinalIgnoreCase) || c.CardNumber.Contains(_search.TrimStart('#'), StringComparison.OrdinalIgnoreCase)) && (_status switch { "listed" => c.IsForSale && !c.IsSold, "sold" => c.IsSold, "collection" => !c.IsForSale && !c.IsSold, _ => true })).OrderBy(c => int.TryParse(c.CardNumber, out var n) ? n : int.MaxValue).ThenBy(c => c.CardNumber).ToList();
     protected override async Task OnInitializedAsync() => await LoadAsync();
-
     private async Task LoadAsync()
     {
-        _loading = true;
-        try
-        {
-            _cards = await Api.GetCardsAsync();
-        }
-        catch
-        {
-            Notify("Could not load cards.", isError: true);
-        }
-        _loading = false;
+        _loading = true; _loadFailed = false;
+        try { _cards = await Api.GetCardsAsync(); }
+        catch { _loadFailed = true; }
+        finally { _loading = false; }
     }
-
-    private void StartCreate()
-    {
-        _editing = new CardUpsertDto();
-        _editingId = null;
-        _originalNumber = null;
-        _message = null;
-    }
-
+    private void ResetFilters() { _search = ""; _status = "all"; }
+    private void StartCreate() { _editing = new(); _editingId = null; _originalNumber = null; _message = null; }
     private void StartEdit(CardDto c)
     {
-        _editingId = c.Id;
-        _originalNumber = c.CardNumber;
-        _editing = ToUpsert(c);
-        _message = null;
+        _editingId = c.Id; _originalNumber = c.CardNumber; _message = null;
+        _editing = new() { CardNumber = c.CardNumber, PlayerName = c.PlayerName, InPlastic = c.InPlastic, InSet1 = c.InSet1, InSet2 = c.InSet2, InSet3 = c.InSet3, InSet4 = c.InSet4, InSet5 = c.InSet5, InSet6 = c.InSet6, Doubles = c.Doubles, IsRookie = c.IsRookie, IsRoyals = c.IsRoyals, IsForSale = c.IsForSale, Price = c.Price, Condition = c.Condition, ListingNotes = c.ListingNotes };
     }
-
-    private void CancelEdit()
-    {
-        _editing = null;
-        _editingId = null;
-    }
-
-    private bool GetSet(int n) => n switch
-    {
-        1 => _editing!.InSet1,
-        2 => _editing!.InSet2,
-        3 => _editing!.InSet3,
-        4 => _editing!.InSet4,
-        5 => _editing!.InSet5,
-        6 => _editing!.InSet6,
-        _ => false
-    };
-
+    private void CancelEdit() { _editing = null; _editingId = null; }
+    private bool GetSet(int n) => n switch { 1 => _editing!.InSet1, 2 => _editing!.InSet2, 3 => _editing!.InSet3, 4 => _editing!.InSet4, 5 => _editing!.InSet5, 6 => _editing!.InSet6, _ => false };
     private void SetSet(int n, bool value)
     {
-        switch (n)
-        {
-            case 1: _editing!.InSet1 = value; break;
-            case 2: _editing!.InSet2 = value; break;
-            case 3: _editing!.InSet3 = value; break;
-            case 4: _editing!.InSet4 = value; break;
-            case 5: _editing!.InSet5 = value; break;
-            case 6: _editing!.InSet6 = value; break;
-        }
+        if (_editing is null) return;
+        switch (n) { case 1: _editing.InSet1 = value; break; case 2: _editing.InSet2 = value; break; case 3: _editing.InSet3 = value; break; case 4: _editing.InSet4 = value; break; case 5: _editing.InSet5 = value; break; case 6: _editing.InSet6 = value; break; }
     }
-
     private async Task SaveAsync()
     {
+        if (_busy || _editing is null) return;
+        if (_editing.IsForSale && (_editing.Price is null || _editing.Price <= 0)) { Notify("Set a price above zero before listing this card.", true); return; }
         _busy = true;
-        var result = _editingId is null
-            ? await Api.CreateCardAsync(_editing!)
-            : await Api.UpdateCardAsync(_editingId.Value, _editing!);
-        _busy = false;
-
-        if (!result.Ok)
+        try
         {
-            Notify(result.Error ?? "Save failed.", isError: true);
-            return;
+            var result = _editingId is null ? await Api.CreateCardAsync(_editing) : await Api.UpdateCardAsync(_editingId.Value, _editing);
+            if (!result.Ok) { Notify(result.Error ?? "The card couldn’t be saved. Please try again.", true); return; }
+            Notify(_editingId is null ? "The card was added to the inventory." : "The card details were updated.", false);
+            CancelEdit(); await LoadAsync();
         }
-
-        Notify(_editingId is null ? "Card created." : "Card updated.", isError: false);
-        _editing = null;
-        _editingId = null;
-        await LoadAsync();
+        catch { Notify("We couldn’t confirm that your changes were saved. Refresh the inventory before trying again.", true); }
+        finally { _busy = false; }
     }
-
-    private async Task SellAsync(CardDto c)
+    private async Task ConfirmAsync(CardDto card, bool delete)
     {
-        if (!await JS.InvokeAsync<bool>("confirm", $"Mark #{c.CardNumber} {c.PlayerName} as sold?"))
-        {
-            return;
-        }
-
-        var result = await Api.SellCardAsync(c.Id, new SellRequest { SoldPrice = c.Price });
-        if (!result.Ok)
-        {
-            Notify(result.Error ?? "Could not record sale.", isError: true);
-            return;
-        }
-
-        Notify($"Marked #{c.CardNumber} as sold.", isError: false);
-        await LoadAsync();
+        if (_busy) return;
+        _pending = card; _deletePending = delete; StateHasChanged();
+        if (_confirmation is not null) await _confirmation.OpenAsync();
     }
-
-    private async Task DeleteAsync(CardDto c)
+    private async Task ApplyConfirmedAsync()
     {
-        if (!await JS.InvokeAsync<bool>("confirm", $"Delete #{c.CardNumber} {c.PlayerName}? This cannot be undone."))
+        if (_busy || _pending is null) return;
+        _busy = true;
+        var card = _pending; var delete = _deletePending;
+        try
         {
-            return;
+            if (_confirmation is not null) await _confirmation.CloseAsync();
+            if (delete)
+            {
+                var result = await Api.DeleteCardAsync(card.Id);
+                if (!result.Ok) { Notify(result.Error ?? "The card couldn’t be deleted.", true); return; }
+                if (_editingId == card.Id) CancelEdit();
+                Notify("Card #{0} was removed from the inventory.", false, card.CardNumber);
+            }
+            else
+            {
+                var result = await Api.SellCardAsync(card.Id, new SellRequest { SoldPrice = card.Price });
+                if (!result.Ok) { Notify(result.Error ?? "The sale couldn’t be recorded.", true); return; }
+                if (_editingId == card.Id) CancelEdit();
+                Notify("Card #{0} was marked as sold.", false, card.CardNumber);
+            }
+            await LoadAsync();
         }
-
-        var result = await Api.DeleteCardAsync(c.Id);
-        if (!result.Ok)
-        {
-            Notify(result.Error ?? "Could not delete card.", isError: true);
-            return;
-        }
-
-        Notify($"Deleted #{c.CardNumber}.", isError: false);
-        await LoadAsync();
+        catch { Notify("We couldn’t complete that change. Please try again.", true); }
+        finally { _busy = false; _pending = null; }
     }
-
-    private static CardUpsertDto ToUpsert(CardDto c) => new()
-    {
-        CardNumber = c.CardNumber,
-        PlayerName = c.PlayerName,
-        InPlastic = c.InPlastic,
-        InSet1 = c.InSet1,
-        InSet2 = c.InSet2,
-        InSet3 = c.InSet3,
-        InSet4 = c.InSet4,
-        InSet5 = c.InSet5,
-        InSet6 = c.InSet6,
-        Doubles = c.Doubles,
-        IsRookie = c.IsRookie,
-        IsRoyals = c.IsRoyals,
-        IsForSale = c.IsForSale,
-        Price = c.Price,
-        Condition = c.Condition,
-        ListingNotes = c.ListingNotes
-    };
-
-    private void Notify(string message, bool isError)
-    {
-        _message = message;
-        _isError = isError;
-    }
+    private void Notify(string message, bool error, params object?[] args) { _message = message; _messageArgs = args; _isError = error; }
 }

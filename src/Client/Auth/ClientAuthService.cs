@@ -30,26 +30,33 @@ public class ClientAuthService
             return (false, "Unable to reach the server. Please try again.");
         }
 
-        if (response.IsSuccessStatusCode)
+        using (response)
         {
-            var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
-            if (result is null || string.IsNullOrWhiteSpace(result.Token))
+            if (response.IsSuccessStatusCode)
             {
-                return (false, "Unexpected response from the server.");
+                var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+                if (result is null || string.IsNullOrWhiteSpace(result.Token))
+                {
+                    return (false, "Unexpected response from the server.");
+                }
+
+                await _store.SetAsync(result.Token);
+                _provider.NotifyStateChanged();
+                return (true, null);
             }
 
-            await _store.SetAsync(result.Token);
-            _provider.NotifyStateChanged();
-            return (true, null);
-        }
+            if (response.StatusCode == HttpStatusCode.TooManyRequests)
+            {
+                return (false, "Too many sign-in attempts. Please wait a minute and try again.");
+            }
 
-        if (response.StatusCode == HttpStatusCode.TooManyRequests)
-        {
-            return (false, "Too many sign-in attempts. Please wait a minute and try again.");
+            if ((int)response.StatusCode >= 500 || response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.MethodNotAllowed)
+            {
+                return (false, "Staff sign-in is unavailable right now. Please try again later.");
+            }
+            var error = await ReadErrorAsync(response);
+            return (false, error ?? "Invalid username or password.");
         }
-
-        var error = await ReadErrorAsync(response);
-        return (false, error ?? "Invalid username or password.");
     }
 
     public async Task LogoutAsync()

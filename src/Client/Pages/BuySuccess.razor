@@ -1,60 +1,50 @@
 @page "/buy/success"
+@implements IDisposable
 @inject ApiClient Api
 
-<PageTitle>Thank you</PageTitle>
-
-<div class="text-center py-5">
+<PageTitle>@L["Payment status — Mark’s Baseball Cards"]</PageTitle>
+<section class="state-page container-width">
     @if (_loading)
     {
-        <div class="spinner-border" role="status" aria-hidden="true"></div>
-        <p class="mt-3">Confirming your payment…</p>
+        <span class="spinner" role="status" aria-label="@(L["Checking payment"])"></span><p class="eyebrow">@L["Back from checkout"]</p><h1>@L["Checking the"] <em>@L["details."]</em></h1><p>@L["We’re checking your payment status with Stripe. This may take a moment."]</p>
     }
     else if (_paid)
     {
-        <h1 class="text-success">✓ Payment received</h1>
-        <p class="lead">
-            Thanks for your purchase@(string.IsNullOrWhiteSpace(_status?.PlayerName)
-                ? "." : $" of #{_status!.CardNumber} {_status.PlayerName}.")
-        </p>
-        <a class="btn btn-primary" href="marketplace">Back to marketplace</a>
+        <span class="state-symbol"><Icon Name="check" Size="32" /></span><p class="eyebrow">@L["Payment confirmed"]</p><h1>@L["Thanks for your"] <em>@L["purchase."]</em></h1><p>@L["Your payment has been confirmed by the checkout service."]</p>@if (!string.IsNullOrWhiteSpace(_status?.PlayerName)) { <div class="checkout-summary">#@_status!.CardNumber · @_status.PlayerName</div> }<a class="button button-primary" href="marketplace">@L["Back to the marketplace"] <Icon Name="arrow" /></a>
     }
     else
     {
-        <h1>Payment status</h1>
-        <p class="text-muted">
-            We couldn't confirm your payment yet. If you completed checkout, it can take a moment to finalize.
-        </p>
-        <a class="btn btn-outline-primary" href="marketplace">Back to marketplace</a>
+        <span class="state-symbol"><Icon Name="info" Size="32" /></span><p class="eyebrow">@L["Payment status"]</p><h1>@L["Let’s check"] <em>@L["once more."]</em></h1><p>@L[string.IsNullOrWhiteSpace(SessionId) ? "There’s no checkout reference in this link. Return to the marketplace to begin a purchase." : "We haven’t been able to confirm payment yet. If you completed checkout, allow a moment and check again. This message does not mean your payment failed."]</p><div class="button-row">@if (!string.IsNullOrWhiteSpace(SessionId)) { <button class="button button-primary" @onclick="CheckAsync">@L["Check payment"] <Icon Name="refresh" /></button> }<a class="button button-outline" href="marketplace">@L["Back to the marketplace"] <Icon Name="arrow" /></a></div>
     }
-</div>
+</section>
 
 @code {
     [SupplyParameterFromQuery(Name = "session_id")] public string? SessionId { get; set; }
-
     private CheckoutStatusDto? _status;
-    private bool _loading = true;
-    private bool _paid;
-
-    protected override async Task OnInitializedAsync()
+    private bool _loading = true, _paid;
+    private CancellationTokenSource? _poll;
+    protected override async Task OnParametersSetAsync() => await CheckAsync();
+    private async Task CheckAsync()
     {
-        if (string.IsNullOrWhiteSpace(SessionId))
+        _poll?.Cancel(); _poll?.Dispose();
+        _poll = new CancellationTokenSource();
+        var token = _poll.Token;
+        _loading = true; _paid = false;
+        try
         {
-            _loading = false;
-            return;
-        }
-
-        // Poll briefly to give the Stripe webhook time to finalize fulfillment.
-        for (var attempt = 0; attempt < 5; attempt++)
-        {
-            _status = await Api.GetCheckoutStatusAsync(SessionId);
-            if (_status?.PaymentStatus == "paid")
+            if (string.IsNullOrWhiteSpace(SessionId)) return;
+            for (var attempt = 0; attempt < 5; attempt++)
             {
-                _paid = true;
-                break;
+                token.ThrowIfCancellationRequested();
+                _status = await Api.GetCheckoutStatusAsync(SessionId);
+                token.ThrowIfCancellationRequested();
+                if (_status?.PaymentStatus == "paid") { _paid = true; break; }
+                if (attempt < 4) await Task.Delay(1000, token);
             }
-            await Task.Delay(1000);
         }
-
-        _loading = false;
+        catch (OperationCanceledException) { }
+        catch { _status = null; }
+        finally { if (!token.IsCancellationRequested) _loading = false; }
     }
+    public override void Dispose() { _poll?.Cancel(); _poll?.Dispose(); base.Dispose(); }
 }

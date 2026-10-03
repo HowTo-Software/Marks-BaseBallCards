@@ -8,6 +8,7 @@
          framework file names and a plain bootstrap script reference. -->
     <WasmFingerprintAssets>false</WasmFingerprintAssets>
     <OverrideHtmlAssetPlaceholders>false</OverrideHtmlAssetPlaceholders>
+    <BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Shared\MarksBaseballCards.Shared.csproj" />
+    <EmbeddedResource Include="Localization\translations.json" LogicalName="MarksBaseballCards.Client.Localization.translations.json" />
   </ItemGroup>
 
 </Project>

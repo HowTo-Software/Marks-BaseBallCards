@@ -1,0 +1,386 @@
+[
+  {
+    "cardNumber": "1",
+    "playerName": "Nolan Ryan",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "2",
+    "playerName": "George Brett 1990 RB",
+    "isRookie": false,
+    "isRoyals": true
+  },
+  {
+    "cardNumber": "3",
+    "playerName": "Carlton Fisk 1990 RB",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "4",
+    "playerName": "Kevin maas 1990 RB",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "5",
+    "playerName": "Cal Ripken 1990 RB",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "6",
+    "playerName": "Nolan Ryan 1990 RB",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "7",
+    "playerName": "Ryne Sandborg",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "8",
+    "playerName": "Bobby Thigpen 1990 RB",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "9",
+    "playerName": "Darrin Fletcher",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "10",
+    "playerName": "Gregg Olson",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "11",
+    "playerName": "Roberto Kelly",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "12",
+    "playerName": "Paul Assenmacher",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "13",
+    "playerName": "Mariano Duncan",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "14",
+    "playerName": "Dennis Lamp",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "15",
+    "playerName": "Von Hayes",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "16",
+    "playerName": "Mike Heath",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "17",
+    "playerName": "Jeff Brantley",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "18",
+    "playerName": "Nelson Liriano",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "19",
+    "playerName": "Jeff Robinson",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "20",
+    "playerName": "Pedro Guerrero",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "21",
+    "playerName": "Joe Morgan",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "22",
+    "playerName": "Stom Davis",
+    "isRookie": false,
+    "isRoyals": true
+  },
+  {
+    "cardNumber": "23",
+    "playerName": "Jim Gantner",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "24",
+    "playerName": "David Martinez",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "25",
+    "playerName": "Tim Belcher",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "26",
+    "playerName": "Luis Sojo",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "27",
+    "playerName": "Bobby Witt",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "28",
+    "playerName": "Alvaro Espinoza",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "29",
+    "playerName": "Bob Walk",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "30",
+    "playerName": "Gregg Jefferies",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "RC31",
+    "playerName": "Colby Ward",
+    "isRookie": true,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "RC32",
+    "playerName": "Mike Simms",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "33",
+    "playerName": "Barry Jones",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "34",
+    "playerName": "Atlee Hammaker",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "35",
+    "playerName": "Greg Maddux",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "36",
+    "playerName": "Donnie Hill",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "37",
+    "playerName": "Tom Bolton",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "38",
+    "playerName": "Scott Bradely",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "RC39",
+    "playerName": "Jim Neidlinger",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "40",
+    "playerName": "Kevin Mitchell",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "41",
+    "playerName": "Ken Dayley",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "42",
+    "playerName": "Chris Hoiles",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "43",
+    "playerName": "Roger McDowell",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "44",
+    "playerName": "Mike Felder",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "45",
+    "playerName": "Chris Sabo",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "46",
+    "playerName": "Tim Drummond",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "47",
+    "playerName": "Brook Jacoby",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "48",
+    "playerName": "Dennis Boyd",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "49",
+    "playerName": "Pat Borders",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "50",
+    "playerName": "Bob Welch",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "51",
+    "playerName": "Art Howe",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "52",
+    "playerName": "Francisco Oliveras",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "53",
+    "playerName": "Mike Sharperson",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "54",
+    "playerName": "Gary Mielke",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "55",
+    "playerName": "Jeffery Leonard",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "56",
+    "playerName": "Jeff Parrett",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "57",
+    "playerName": "Jake Howell",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "58",
+    "playerName": "Mcl Stottlemyre Jr.",
+    "isRookie": false,
+    "isRoyals": true
+  },
+  {
+    "cardNumber": "59",
+    "playerName": "Eric Yelding",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "60",
+    "playerName": "Frank Viola",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "61",
+    "playerName": "Stan Javier",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "62",
+    "playerName": "Lee Guetteman",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "63",
+    "playerName": "Milt Thompson",
+    "isRookie": false,
+    "isRoyals": false
+  },
+  {
+    "cardNumber": "64",
+    "playerName": "Tom Herr",
+    "isRookie": false,
+    "isRoyals": false
+  }
+]
