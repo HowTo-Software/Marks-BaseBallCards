@@ -46,6 +46,11 @@ jobs:
       run: |
         umask 077
         printf '%s\n' "$ENV_FILE" | tr -d '\r' > .env
+        sed -i 's/Database=MarksBaseballCards/Database=Website_Application_MarksBaseballCardsDb/g' .env
+        if ! grep -Eq '^ConnectionStrings__Default=.*Database=Website_Application_MarksBaseballCardsDb([;]|$)' .env; then
+          echo "::error::ENV_FILE must define ConnectionStrings__Default for Website_Application_MarksBaseballCardsDb."
+          exit 1
+        fi
 
     - name: Build and replace container on 206
       run: docker compose up -d --build --remove-orphans

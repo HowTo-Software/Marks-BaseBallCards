@@ -70,14 +70,26 @@ docker compose up --build -d
 
 Then open <http://localhost:8090> (or `http://<docker-host>:8090`, e.g.
 <http://192.168.1.202:8090>). On first start the API creates the
-`MarksBaseballCards` database, applies migrations, and seeds the 64 cards plus the two
-admin accounts.
+`Website_Application_MarksBaseballCardsDb` database, applies migrations, and seeds the
+64 cards plus the two admin accounts.
+
+## Database migration
+
+`MarksBaseballCards` was copied to `Website_Application_MarksBaseballCardsDb` using a
+verified SQL Server backup and restore, preserving its schema, stored procedures, EF
+migration history, and data. The source database was left unchanged. The destination
+was verified with 64 cards, 3 users, and 30 history records at migration time.
+
+The deployment workflow redirects `ConnectionStrings__Default` from the old database
+name to the new one when it writes the existing GitHub Actions `ENV_FILE` secret to
+`.env`; other secret values are preserved. The next deployment applies the new
+connection string to the running app.
 
 ## Run locally (development)
 
 ```powershell
 # set a dev connection string (PowerShell)
-$env:ConnectionStrings__Default = "Server=192.168.1.212,1433;Database=MarksBaseballCards;User Id=sa;Password=...;TrustServerCertificate=True"
+$env:ConnectionStrings__Default = "Server=192.168.1.212,1433;Database=Website_Application_MarksBaseballCardsDb;User Id=sa;Password=...;TrustServerCertificate=True"
 dotnet run --project src/Api
 ```
 
