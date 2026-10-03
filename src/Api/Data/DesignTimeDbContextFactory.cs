@@ -23,7 +23,7 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             connectionString =
-                "Server=localhost;Database=MarksBaseballCards;User Id=sa;Password=Placeholder_1;TrustServerCertificate=True";
+                "Server=localhost;Database=Website_Application_MarksBaseballCardsDb;User Id=sa;Password=Placeholder_1;TrustServerCertificate=True";
         }
 
         var options = new DbContextOptionsBuilder<AppDbContext>()
