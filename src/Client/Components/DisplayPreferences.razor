@@ -1,0 +1,15 @@
+<div class="display-preferences" role="group" aria-label="@L["Display preferences"]">
+    <button type="button" class="theme-toggle" aria-label="@L[L.IsDark ? "Switch to light theme" : "Switch to dark theme"]" title="@L[L.IsDark ? "Switch to light theme" : "Switch to dark theme"]" aria-pressed="@L.IsDark" @onclick="L.ToggleThemeAsync">
+        <span class="theme-icon"><Icon Name="@(L.IsDark ? "sun" : "moon")" Size="18" /></span>
+    </button>
+    <label class="language-picker">
+        <Icon Name="globe" Size="16" /><span class="sr-only">@L["Language"]</span>
+        <select value="@L.Language" @onchange="ChangeLanguageAsync" aria-label="@L["Language"]">
+            <option value="en" lang="en" title="English">EN</option>
+            <option value="pt-BR" lang="pt-BR" title="Português brasileiro">PT-BR</option>
+            <option value="es" lang="es" title="Español">ES</option>
+        </select>
+    </label>
+</div>
+
+@code { private Task ChangeLanguageAsync(ChangeEventArgs args) => L.SetLanguageAsync(args.Value?.ToString()); }

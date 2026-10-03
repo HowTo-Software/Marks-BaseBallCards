@@ -1,0 +1,9 @@
+@* Adapted from OriginKit Stagger Text Rise. See docs/UI_REFERENCES.md. *@
+<span class="animated-text" data-rise>
+    <span class="sr-only">@Text</span>
+    <span aria-hidden="true">@foreach (var word in Text.Split(' ')) { <span class="rise-word">@foreach (var letter in word) { <span class="rise-char">@letter</span> }</span><span class="rise-space">@((char)160)</span> }</span>
+</span>
+
+@code {
+    [Parameter] public string Text { get; set; } = "";
+}

@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using Microsoft.JSInterop;
 
 namespace MarksBaseballCards.Client.Auth;
 
@@ -12,7 +13,13 @@ public class BearerTokenHandler : DelegatingHandler
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        var token = await _store.GetAsync();
+        string? token = null;
+        try { token = await _store.GetAsync(); }
+        catch (JSException)
+        {
+            // Public reads remain available when browser storage is disabled.
+            // Protected endpoints still enforce authentication on the server.
+        }
         if (!string.IsNullOrWhiteSpace(token))
         {
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);

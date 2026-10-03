@@ -2,131 +2,55 @@
 @attribute [Authorize(Roles = Roles.SystemAdmin)]
 @inject ApiClient Api
 
-<PageTitle>System · Statistics</PageTitle>
-
-<div class="d-flex justify-content-between align-items-center">
-    <h1>System dashboard</h1>
-    <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync">Refresh</button>
-</div>
-
-@if (_loading)
-{
-    <p>Loading…</p>
-}
-else if (_stats is null)
-{
-    <div class="alert alert-danger">Could not load statistics.</div>
-}
-else
-{
-    <div class="row g-3 my-1">
-        @foreach (var tile in Tiles)
-        {
-            <div class="col-6 col-md-3">
-                <div class="card text-center shadow-sm h-100">
-                    <div class="card-body py-3">
-                        <div class="display-6">@tile.Value</div>
-                        <div class="text-muted small">@tile.Label</div>
-                    </div>
-                </div>
-            </div>
-        }
-    </div>
-
-    <h2 class="h5 mt-4">Set completion</h2>
-    <div class="row g-3">
-        @foreach (var s in _stats.SetProgress)
-        {
-            <div class="col-md-6 col-lg-4">
-                <div class="d-flex justify-content-between small">
-                    <span>Set #@s.SetNumber</span>
-                    <span>@s.CardsFiled / @s.TotalCards (@s.PercentComplete%)</span>
-                </div>
-                <div class="progress" role="progressbar" aria-valuenow="@s.PercentComplete" aria-valuemin="0" aria-valuemax="100">
-                    <div class="progress-bar" style="width:@(s.PercentComplete.ToString(System.Globalization.CultureInfo.InvariantCulture))%"></div>
-                </div>
-            </div>
-        }
-    </div>
-
-    <div class="d-flex justify-content-between align-items-center mt-4">
-        <h2 class="h5 mb-0">Activity history</h2>
-        <small class="text-muted">Generated @_stats.GeneratedAtUtc.ToLocalTime().ToString("g")</small>
-    </div>
-    @if (_history.Count == 0)
+<PageTitle>@L["Collection dashboard — Mark’s Baseball Cards"]</PageTitle>
+<section class="workspace container-width">
+    <div class="workspace-heading"><div><p class="eyebrow">@L["System workspace"]</p><h1>@L["The collection,"] <em>@L["at a glance."]</em></h1><p>@L["Live inventory statistics and the latest activity, all in one place."]</p></div><button class="button button-outline" @onclick="LoadAsync" disabled="@_loading">@L["Refresh data"] <Icon Name="refresh" Size="18" /></button></div>
+    @if (_loading)
     {
-        <p class="text-muted">No activity recorded yet.</p>
+        <div class="empty-state"><span class="spinner" role="status" aria-label="@(L["Loading statistics"])"></span><p>@L["Getting the latest collection details."]</p></div>
+    }
+    else if (_stats is null)
+    {
+        <div class="empty-state"><Icon Name="info" Size="30" /><h2>@L["The dashboard couldn’t load."]</h2><p>@L["Check your connection and sign-in, then give it another try."]</p><button class="button button-primary" @onclick="LoadAsync">@L["Try again"] <Icon Name="refresh" /></button></div>
     }
     else
     {
-        <div class="table-responsive">
-            <table class="table table-sm table-striped align-middle">
-                <thead>
-                    <tr><th>When</th><th>Action</th><th>Card</th><th>By</th><th>Details</th></tr>
-                </thead>
-                <tbody>
-                    @foreach (var h in _history)
-                    {
-                        <tr>
-                            <td class="text-nowrap small">@h.ChangedAtUtc.ToLocalTime().ToString("g")</td>
-                            <td><span class="badge @BadgeFor(h.Action)">@h.Action</span></td>
-                            <td class="small">@(string.IsNullOrWhiteSpace(h.CardNumber) ? "" : $"#{h.CardNumber} {h.PlayerName}")</td>
-                            <td class="small">@h.ChangedBy</td>
-                            <td class="small">@h.Details</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+        <div class="dashboard-tiles">
+            @foreach (var tile in Tiles) { <div class="stat-tile @(tile.Label == "Inventory records" || tile.Label == "Recorded sales / USD" ? "highlight" : "")"><span class="eyebrow">@L[tile.Label]</span><span class="stat-value">@tile.Value</span></div> }
         </div>
+        <div class="workspace-panel"><div class="panel-heading"><div><p class="eyebrow">@L["Filing progress"]</p><h2>@L["A place in each set."]</h2><p>@L.Format("Filed cards as a share of the current {0} inventory records. This measures your inventory filing, not completion of the full 1991 Topps set.", _stats.TotalCards)</p></div><Icon Name="card" Size="26" /></div>
+            <div class="progress-grid">@foreach (var set in _stats.SetProgress) { <div><div class="progress-label"><span>@L.Format("Filing set {0}", set.SetNumber)</span><span>@set.CardsFiled / @set.TotalCards · @L.Number(set.PercentComplete)%</span></div><div class="progress-track" role="progressbar" aria-label="@L.Format("Filing set {0}", set.SetNumber)" aria-valuenow="@set.PercentComplete" aria-valuemin="0" aria-valuemax="100"><div class="progress-fill" style="@($"width:{set.PercentComplete.ToString(CultureInfo.InvariantCulture)}%")"></div></div></div> }</div>
+        </div>
+        <div class="activity-heading"><div><p class="eyebrow">@L["Latest 200 entries"]</p><h2>@L["Collection activity."]</h2></div><small>@L.Format("Statistics updated {0}", L.DateTimeLocal(_stats.GeneratedAtUtc))</small></div>
+        @if (_historyError) { <div class="inline-notice notice-error" role="status"><Icon Name="info" Size="18" /><span>@L["Statistics loaded, but activity history could not be retrieved. Refresh to try again."]</span></div> }
+        else if (_history.Count == 0) { <div class="empty-state"><Icon Name="card" Size="28" /><h2>@L["A fresh page."]</h2><p>@L["No activity has been recorded yet."]</p></div> }
+        else
+        {
+            <div class="data-table-shell"><table class="data-table"><caption>@L.Format("The latest {0} returned entries, up to 200. Times are shown in your local timezone.", _history.Count)</caption><thead><tr><th scope="col">@L["When"]</th><th scope="col">@L["Action"]</th><th scope="col">@L["Card"]</th><th scope="col">@L["By"]</th><th scope="col">@L["Details"]</th></tr></thead><tbody>@foreach (var entry in _history) { <tr><td>@L.DateTimeLocal(entry.ChangedAtUtc)</td><td><span class="status-tag @StatusFor(entry.Action)">@L[entry.Action]</span></td><td class="player-cell">@(string.IsNullOrWhiteSpace(entry.CardNumber) ? "?" : $"#{entry.CardNumber} {entry.PlayerName}")</td><td>@entry.ChangedBy</td><td>@entry.Details</td></tr> }</tbody></table></div>
+        }
     }
-}
+</section>
 
 @code {
     private StatisticsDto? _stats;
-    private List<CardHistoryDto> _history = new();
-    private bool _loading = true;
-
-    private IEnumerable<(string Label, object Value)> Tiles => _stats is null
-        ? Enumerable.Empty<(string, object)>()
-        : new (string, object)[]
-        {
-            ("Total cards", _stats.TotalCards),
-            ("In plastic", _stats.CardsInPlastic),
-            ("Rookies", _stats.RookieCards),
-            ("Royals", _stats.RoyalsCards),
-            ("Doubles", _stats.TotalDoubles),
-            ("For sale", _stats.CardsForSale),
-            ("Sold", _stats.CardsSold),
-            ("Sales total", _stats.TotalSalesValue.ToString("C"))
-        };
-
+    private List<CardHistoryDto> _history = [];
+    private bool _loading = true, _historyError;
+    private IEnumerable<(string Label, object Value)> Tiles => _stats is null ? [] : new (string, object)[] {
+        ("Inventory records", _stats.TotalCards), ("Stored in plastic", _stats.CardsInPlastic), ("Rookie markers", _stats.RookieCards), ("Royals markers", _stats.RoyalsCards),
+        ("Recorded doubles", _stats.TotalDoubles), ("Available listings", _stats.CardsForSale), ("Sold cards", _stats.CardsSold), ("Recorded sales / USD", L.Usd(_stats.TotalSalesValue))
+    };
     protected override async Task OnInitializedAsync() => await LoadAsync();
-
     private async Task LoadAsync()
     {
-        _loading = true;
-        try
+        _loading = true; _historyError = false;
+        try { _stats = await Api.GetStatisticsAsync(); }
+        catch { _stats = null; }
+        if (_stats is not null)
         {
-            _stats = await Api.GetStatisticsAsync();
-            _history = await Api.GetHistoryAsync(200);
-        }
-        catch
-        {
-            _stats = null;
+            try { _history = await Api.GetHistoryAsync(200); }
+            catch { _historyError = true; }
         }
         _loading = false;
     }
-
-    private static string BadgeFor(string action) => action switch
-    {
-        "Created" => "bg-success",
-        "Updated" => "bg-primary",
-        "Listed" => "bg-success",
-        "Unlisted" => "bg-secondary",
-        "Sold" => "bg-dark",
-        "Deleted" => "bg-danger",
-        "Login" => "bg-info text-dark",
-        "LoginFailed" => "bg-warning text-dark",
-        _ => "bg-secondary"
-    };
+    private static string StatusFor(string action) => action switch { "Created" or "Listed" => "available", "Sold" => "sold", "Deleted" or "LoginFailed" => "danger", _ => "" };
 }

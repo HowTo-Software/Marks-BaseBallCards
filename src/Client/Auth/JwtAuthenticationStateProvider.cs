@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.JSInterop;
 
 namespace MarksBaseballCards.Client.Auth;
 
@@ -19,21 +20,29 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        var token = await _store.GetAsync();
-        if (string.IsNullOrWhiteSpace(token))
+        try
         {
+            var token = await _store.GetAsync();
+            if (string.IsNullOrWhiteSpace(token)) return Anonymous;
+            var claims = ParseClaims(token).ToList();
+            if (token.Split('.').Length != 3 || IsExpired(claims))
+            {
+                await _store.RemoveAsync();
+                return Anonymous;
+            }
+            var identity = new ClaimsIdentity(claims, authenticationType: "jwt", nameType: "name", roleType: "role");
+            return new AuthenticationState(new ClaimsPrincipal(identity));
+        }
+        catch (Exception ex) when (ex is FormatException or JsonException or ArgumentOutOfRangeException)
+        {
+            try { await _store.RemoveAsync(); } catch (JSException) { }
             return Anonymous;
         }
-
-        var claims = ParseClaims(token).ToList();
-        if (IsExpired(claims))
+        catch (JSException)
         {
-            await _store.RemoveAsync();
+            // Browsing remains available when the browser denies access to storage.
             return Anonymous;
         }
-
-        var identity = new ClaimsIdentity(claims, authenticationType: "jwt", nameType: "name", roleType: "role");
-        return new AuthenticationState(new ClaimsPrincipal(identity));
     }
 
     /// <summary>Re-evaluates auth state after login / logout.</summary>
@@ -46,7 +55,7 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
         {
             return DateTimeOffset.FromUnixTimeSeconds(seconds) <= DateTimeOffset.UtcNow;
         }
-        return false;
+        return true;
     }
 
     private static IEnumerable<Claim> ParseClaims(string jwt)

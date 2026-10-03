@@ -20,11 +20,18 @@ builder.Services.AddAuthorizationCore();
 // ---- HTTP client with bearer-token handler ----
 builder.Services.AddScoped<BearerTokenHandler>();
 builder.Services.AddHttpClient("MarksApi", client =>
-        client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress))
+    {
+        client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress);
+        client.Timeout = TimeSpan.FromSeconds(20);
+    })
     .AddHttpMessageHandler<BearerTokenHandler>();
 builder.Services.AddScoped(sp =>
     sp.GetRequiredService<IHttpClientFactory>().CreateClient("MarksApi"));
 
 builder.Services.AddScoped<ApiClient>();
+builder.Services.AddScoped<CollectionCatalog>();
+builder.Services.AddScoped<UiPreferences>();
 
-await builder.Build().RunAsync();
+var host = builder.Build();
+await host.Services.GetRequiredService<UiPreferences>().InitializeAsync();
+await host.RunAsync();

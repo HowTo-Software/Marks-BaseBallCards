@@ -3,101 +3,52 @@
 @inject NavigationManager Nav
 @inject AuthenticationStateProvider AuthState
 
-<PageTitle>Sign in</PageTitle>
-
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-        <div class="card shadow-sm mt-4">
-            <div class="card-body p-4">
-                <h1 class="h4 mb-1">Staff sign in</h1>
-                <p class="text-muted small mb-3">Admin and system-operator access only.</p>
-
-                @if (!string.IsNullOrEmpty(_error))
-                {
-                    <div class="alert alert-danger py-2" role="alert">@_error</div>
-                }
-
-                <EditForm Model="_model" OnValidSubmit="SubmitAsync">
-                    <DataAnnotationsValidator />
-                    <div class="mb-3">
-                        <label class="form-label" for="username">Username</label>
-                        <InputText id="username" class="form-control" @bind-Value="_model.Username"
-                                   autocomplete="username" disabled="@_busy" />
-                        <ValidationMessage For="() => _model.Username" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label" for="password">Password</label>
-                        <InputText id="password" type="password" class="form-control" @bind-Value="_model.Password"
-                                   autocomplete="current-password" disabled="@_busy" />
-                        <ValidationMessage For="() => _model.Password" />
-                    </div>
-                    <button class="btn btn-primary w-100" type="submit" disabled="@_busy">
-                        @if (_busy)
-                        {
-                            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
-                        }
-                        Sign in
-                    </button>
-                </EditForm>
-
-                <p class="text-muted small mt-3 mb-0">
-                    <span class="bi" aria-hidden="true">🔒</span>
-                    Protected by per-IP rate limiting and automatic account lockout.
-                </p>
-            </div>
-        </div>
+<PageTitle>@L["Staff access — Mark’s Baseball Cards"]</PageTitle>
+<section class="login-section container-width">
+    <div class="login-story"><span class="eyebrow">@L["BEHIND THE COLLECTION"]</span><Icon Name="baseball" Size="120" /><h1>@L["A place for"]<br /><em>@L["every card."]</em></h1><p>@L["The tools to keep the collection organized,"]<br />@L["and the game close."]</p><span class="login-edition">@L["MARK’S BASEBALL CARDS / 1991 TOPPS"]</span></div>
+    <div class="login-form-panel"><p class="eyebrow"><Icon Name="lock" Size="15" /> @L["Staff access"]</p><h2>@L["Welcome"] <em>@L["back."]</em></h2><p>@L["Sign in to manage the collection or view its activity."]</p>
+        @if (!string.IsNullOrEmpty(_error)) { <div class="inline-notice notice-error" role="alert"><Icon Name="info" Size="18" /><span>@L[_error]</span></div> }
+        <EditForm Model="_model" OnValidSubmit="SubmitAsync">
+            <DataAnnotationsValidator />
+            <div class="form-field"><label for="username">@L["Username"]</label><InputText id="username" class="form-control" @bind-Value="_model.Username" autocomplete="username" disabled="@_busy" placeholder="@(L["Your staff username"])" /><LocalizedValidationMessage For="() => _model.Username" /></div>
+            <div class="form-field"><label for="password">@L["Password"]</label><div class="password-input"><InputText id="password" type="@(_showPassword ? "text" : "password")" class="form-control" @bind-Value="_model.Password" autocomplete="current-password" disabled="@_busy" placeholder="@(L["Your password"])" /><button class="icon-button" type="button" aria-label="@L[_showPassword ? "Hide password" : "Show password"]" aria-pressed="@_showPassword" @onclick="() => _showPassword = !_showPassword"><Icon Name="eye" Size="19" /></button></div><LocalizedValidationMessage For="() => _model.Password" /></div>
+            <button class="button button-primary full-width" type="submit" disabled="@_busy">@L[_busy ? "Signing in..." : "Sign in"] <Icon Name="arrow" /></button>
+        </EditForm>
+        <p class="login-help">@L["Staff accounts are provided by the site owner. Browsing and buying do not require a sign-in."]</p><a href="collection" class="text-link">@L["Back to the collection"] <Icon Name="arrow" Size="17" /></a>
     </div>
-</div>
+</section>
 
 @code {
     [SupplyParameterFromQuery] public string? ReturnUrl { get; set; }
-
     private readonly LoginRequest _model = new();
     private string? _error;
-    private bool _busy;
-
+    private bool _busy, _showPassword;
     protected override async Task OnInitializedAsync()
     {
         var state = await AuthState.GetAuthenticationStateAsync();
-        if (state.User.Identity?.IsAuthenticated == true)
-        {
-            Nav.NavigateTo(DestinationFor(state));
-        }
+        if (state.User.Identity?.IsAuthenticated == true) Nav.NavigateTo(DestinationFor(state));
     }
-
     private async Task SubmitAsync()
     {
-        _busy = true;
-        _error = null;
-
-        var (ok, error) = await Auth.LoginAsync(_model);
-
-        _busy = false;
-        if (!ok)
+        if (_busy) return;
+        _busy = true; _error = null;
+        try
         {
-            _error = error;
-            _model.Password = string.Empty;
-            return;
+            var (ok, error) = await Auth.LoginAsync(_model);
+            if (!ok) { _error = error ?? "Sign-in failed. Please try again."; _model.Password = ""; return; }
+            Nav.NavigateTo(DestinationFor(await AuthState.GetAuthenticationStateAsync()));
         }
-
-        var state = await AuthState.GetAuthenticationStateAsync();
-        Nav.NavigateTo(DestinationFor(state));
+        catch { _error = "We couldn’t finish signing you in. Please try again."; _model.Password = ""; }
+        finally { _busy = false; }
     }
-
     private string DestinationFor(AuthenticationState state)
     {
-        if (!string.IsNullOrWhiteSpace(ReturnUrl))
-        {
-            return ReturnUrl!;
-        }
-        if (state.User.IsInRole(Roles.Admin))
-        {
-            return "admin";
-        }
-        if (state.User.IsInRole(Roles.SystemAdmin))
-        {
-            return "system";
-        }
+        // Return only to a path inside this application; never follow a supplied external URL.
+        var root = new Uri(Nav.BaseUri);
+        if (!string.IsNullOrWhiteSpace(ReturnUrl) && !ReturnUrl.Contains('\\') && Uri.TryCreate(root, ReturnUrl, out var destination) && root.IsBaseOf(destination) && !destination.AbsolutePath.TrimEnd('/').EndsWith("/login", StringComparison.OrdinalIgnoreCase))
+            return destination.PathAndQuery + destination.Fragment;
+        if (state.User.IsInRole(Roles.Admin)) return "admin";
+        if (state.User.IsInRole(Roles.SystemAdmin)) return "system";
         return "";
     }
 }

@@ -1,53 +1,97 @@
-﻿@page "/"
+@page "/"
+@inject CollectionCatalog Catalog
 
-<PageTitle>Mark's Baseball Cards</PageTitle>
+<PageTitle>@L["Mark’s Baseball Cards — For the love of the game"]</PageTitle>
 
-<h1>⚾ Mark's Baseball Cards</h1>
-<p class="lead">The 1991 Topps set — 40 years of baseball, now buyable online.</p>
-
-<div class="row g-3 mt-2">
-    <div class="col-md-4">
-        <div class="card h-100 shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title">Browse the marketplace</h5>
-                <p class="card-text">See which cards are for sale, check condition and price, and buy securely with Stripe.</p>
-                <a class="btn btn-primary" href="marketplace">Shop cards</a>
-            </div>
-        </div>
+<section class="hero container-width">
+    <div class="hero-copy">
+        <p class="eyebrow"><span class="status-dot"></span> @L["A personal collection. A shared passion."]</p>
+        <h1><AnimatedText Text="@(L["For the love"])" /><br />@L["of"] <em><AnimatedText Text="@(L["the game."])" /></em></h1>
+        <p class="hero-description">@L["Some things are worth holding on to."]<br /> @L["Discover the players, the stories, and the 1991 Topps cards in Mark’s collection."]</p>
+        <div class="hero-actions"><a class="button button-primary" href="collection">@L["Explore the collection"] <span class="button-arrow"><Icon Name="up-right" /></span></a><a class="text-link" href="marketplace">@L["Shop available cards"] <Icon Name="arrow" Size="18" /></a></div>
+        <div class="hero-footnote"><Icon Name="card" Size="17" /><span>1991 TOPPS <span class="middot">/</span> @L["THE 40TH ANNIVERSARY EDITION"]</span></div>
     </div>
-    <AuthorizeView Roles="@Roles.Admin" Context="adminCtx">
-        <div class="col-md-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">Manage inventory</h5>
-                    <p class="card-text">Add, edit, list for sale, and record sales across the whole collection.</p>
-                    <a class="btn btn-outline-primary" href="admin">Open admin</a>
-                </div>
-            </div>
+    <div class="hero-gallery" data-tilt>
+        <span class="gallery-index">@L["THE COLLECTOR’S EDITION — VOL. 01"]</span>
+        <div class="hero-card hero-card-back"><span>@L["FORTY YEARS"]<br />@L["OF BASEBALL."]</span><Icon Name="baseball" Size="110" /></div>
+        <div class="hero-card hero-card-middle"><span class="eyebrow">@L["A piece of the game"]</span><span class="middle-number">40</span><span class="eyebrow">1951 — 1991</span></div>
+        <div class="hero-card hero-card-front">
+            <div class="hero-print-top"><span>MARK’S<br />BASEBALL CARDS</span><span>@L["EST."]<br /><strong>1991</strong></span></div>
+            <div class="hero-ball"><Icon Name="baseball" Size="225" /></div>
+            <div class="hero-print-bottom"><span class="hero-print-title">@L["The game."]<br /><em>@L["In your hands."]</em></span><span class="print-edition">@L["THE 1991"]<br />@L["COLLECTION"]</span></div>
         </div>
-    </AuthorizeView>
-    <AuthorizeView Roles="@Roles.SystemAdmin" Context="sysCtx">
-        <div class="col-md-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">System dashboard</h5>
-                    <p class="card-text">Review collection statistics, set completion, and the full activity history.</p>
-                    <a class="btn btn-outline-primary" href="system">Open dashboard</a>
-                </div>
-            </div>
+        <div class="anniversary-stamp" aria-label="@(L["1991 collection"])"><span>@L["COLLECTED WITH CARE"]</span><strong>’91</strong><span>@L["BUILT ON BASEBALL"]</span></div>
+        <span class="gallery-caption">@L["Illustrated record artwork · Not a card scan"]</span>
+    </div>
+</section>
+
+<div class="archive-strip"><div class="container-width archive-strip-inner"><span><strong>1991</strong> @L["A year to collect"]</span><span><strong>64</strong> @L["Original checklist records"]</span><span><strong>06</strong> @L["Filing sets in the collection"]</span><a href="about#collection-notes">@L["Know what you’re looking at"] <Icon Name="up-right" Size="17" /></a></div></div>
+
+<section class="section container-width" aria-labelledby="collection-heading">
+    <div class="section-heading" data-reveal><div><p class="eyebrow">@L["From the original checklist"]</p><h2 id="collection-heading">@L["A few familiar"] <em>@L["faces."]</em></h2></div><a class="text-link" href="collection">@L["See the whole collection"] <Icon Name="arrow" Size="18" /></a></div>
+    @if (_loadError)
+    {
+        <div class="inline-notice"><Icon Name="info" /><span>@L["The checklist couldn’t load just now."]</span><button class="text-button" @onclick="LoadAsync">@L["Try again"]</button></div>
+    }
+    else if (_featured.Count == 0)
+    {
+        <div class="catalog-grid" aria-label="@(L["Loading collection"])">@for (var i = 0; i < 4; i++) { <div class="card-skeleton"><div></div><span></span><span></span></div> }</div>
+    }
+    else
+    {
+        <div class="catalog-grid">
+            @foreach (var card in _featured)
+            {
+                <a class="collection-card" href="@($"collection?card={Uri.EscapeDataString(card.CardNumber)}")" data-reveal>
+                    <div class="card-art-wrap"><CardArt Number="@card.CardNumber" PlayerName="@card.PlayerName" /><span class="card-open"><Icon Name="up-right" /></span></div>
+                    <div class="card-meta"><span>1991 TOPPS</span><span>#@card.CardNumber</span></div><h3>@card.PlayerName</h3><span class="card-subtitle">@L["From the collection"] <span>@L["View record"] <Icon Name="arrow" Size="14" /></span></span>
+                </a>
+            }
         </div>
-    </AuthorizeView>
-    <AuthorizeView>
-        <NotAuthorized>
-            <div class="col-md-4">
-                <div class="card h-100 shadow-sm border-secondary">
-                    <div class="card-body">
-                        <h5 class="card-title">Staff sign in</h5>
-                        <p class="card-text">Admins and system operators can sign in to manage cards and view statistics.</p>
-                        <a class="btn btn-outline-secondary" href="login">Sign in</a>
-                    </div>
-                </div>
-            </div>
-        </NotAuthorized>
-    </AuthorizeView>
-</div>
+    }
+    <p class="collection-caption">@L["Illustrated record covers, not card photographs. Names and numbers come from the original checklist."]</p>
+</section>
+
+<section class="story-band">
+    <div class="container-width story-inner">
+        <div class="story-art" data-reveal aria-hidden="true"><span class="story-art-label">@L["THERE’S NO"]<br />@L["PLACE LIKE"]</span><svg viewBox="0 0 300 240" fill="none"><path d="M150 30 265 145 150 220 35 145Z" stroke="currentColor" stroke-width="1.5" /><path d="M150 220V105m-115 40 115-40 115 40M90 110c28-38 92-38 120 0" stroke="currentColor" stroke-width="1.5" /><path d="m142 209 8-8 8 8v8h-16Z" fill="currentColor" /><rect x="142" y="28" width="16" height="16" transform="rotate(45 150 36)" fill="currentColor" /><rect x="27" y="137" width="16" height="16" transform="rotate(45 35 145)" fill="currentColor" /><rect x="257" y="137" width="16" height="16" transform="rotate(45 265 145)" fill="currentColor" /></svg><span class="story-art-home">@L["home."]</span></div>
+        <div class="story-copy" data-reveal><p class="eyebrow">@L["More than a checklist"]</p><h2>@L["A little cardboard."]<br /><em>@L["A lot of baseball."]</em></h2><p>@L["The joy is in the details. A name you recognize. A number you’ve been looking for. Another card filed in its place."]</p><p>@L["This is a personal collection, made easier to explore. The original checklist lives here alongside a marketplace for cards Mark chooses to sell."]</p><a class="button button-light" href="about">@L["The story behind the collection"] <Icon Name="up-right" /></a></div>
+    </div>
+</section>
+
+<section class="section container-width collecting-section">
+    <div class="collecting-intro" data-reveal><p class="eyebrow">@L["A good place to start"]</p><h2>@L["Find a card."]<br /><em>@L["Keep a memory."]</em></h2><p>@L["From the first look to the final checkout, the details should be easy to follow."]</p><a href="marketplace" class="text-link">@L["Visit the marketplace"] <Icon Name="arrow" Size="18" /></a></div>
+    <div class="steps-stack" data-card-stack>
+        <article class="step-card" data-stack-card><span class="step-number">@L["01 / EXPLORE"]</span><Icon Name="search" Size="26" /><h3>@L["Start with the collection."]</h3><p>@L["Search the original checklist by player or card number. Explore the records marked as rookies and Royals."]</p></article>
+        <article class="step-card" data-stack-card><span class="step-number">@L["02 / LOOK CLOSER"]</span><Icon Name="eye" Size="26" /><h3>@L["Make the details count."]</h3><p>@L["Live listings show the seller’s price, condition and notes. Record illustrations are clearly labeled; they aren’t card scans."]</p></article>
+        <article class="step-card" data-stack-card><span class="step-number">@L["03 / CHECK OUT"]</span><Icon Name="lock" Size="26" /><h3>@L["A straightforward checkout."]</h3><p>@L["Available cards take you to Stripe’s hosted checkout. Your payment status is checked when you return."]</p></article>
+    </div>
+</section>
+
+<section class="section container-width faq-section">
+    <div data-reveal><p class="eyebrow">@L["Before you browse"]</p><h2>@L["A few things"]<br /><em>@L["to know."]</em></h2></div>
+    <div class="faq-list" data-reveal>
+        <details><summary>@L["Is everything in the collection for sale?"]<Icon Name="plus" /></summary><p>@L["No. The collection is the original archive. Only cards listed in the marketplace are offered for purchase, and availability comes from the live inventory."]</p></details>
+        <details><summary>@L["Are the images actual card scans?"]<Icon Name="plus" /></summary><p>@L["The illustrated covers are original artwork for collection records. This project does not yet include photographs of the individual cards. Read the listing’s condition and notes before buying."]</p></details>
+        <details><summary>@L["Do I need an account to browse or buy?"]<Icon Name="plus" /></summary><p>@L["No account is needed to browse the collection or use the public marketplace. Staff sign-in is for managing cards and viewing the dashboard."]</p></details>
+        <details><summary>@L["What does “1991 Topps collection” mean here?"]<Icon Name="plus" /></summary><p>@L["It means Mark’s original 64-record checklist for that edition, not a complete 1991 Topps set. The archive keeps the original names, numbers and category flags."]</p></details>
+    </div>
+</section>
+
+@code {
+    private List<CollectionRecord> _featured = [];
+    private bool _loadError;
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+    private async Task LoadAsync()
+    {
+        _loadError = false;
+        try
+        {
+            var records = await Catalog.GetAsync();
+            string[] numbers = ["1", "2", "3", "4"];
+            _featured = records.Where(c => numbers.Contains(c.CardNumber)).Take(4).ToList();
+            if (_featured.Count < 4) _featured = records.Take(4).ToList();
+        }
+        catch { _loadError = true; }
+    }
+}
