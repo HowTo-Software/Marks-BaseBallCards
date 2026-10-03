@@ -1,0 +1,67 @@
+name: Build and deploy
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+
+    - uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Build
+      run: dotnet build src/Api/MarksBaseballCards.Api.csproj -c Release
+
+  # Runs on the self-hosted runner on 192.168.1.210 and builds/replaces the
+  # container on 192.168.1.206 over SSH (alias marks-deploy-206 in ~/.ssh/config).
+  deploy:
+    needs: build
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    runs-on: [ self-hosted, marks-deploy ]
+    concurrency:
+      group: deploy-206
+      cancel-in-progress: false
+    env:
+      DOCKER_HOST: ssh://marks-deploy-206
+      # Same project name as the original manual deploy, so compose replaces that container.
+      COMPOSE_PROJECT_NAME: marks-baseballcards
+
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Write .env
+      env:
+        ENV_FILE: ${{ secrets.ENV_FILE }}
+      run: |
+        umask 077
+        printf '%s\n' "$ENV_FILE" | tr -d '\r' > .env
+        sed -i 's/Database=MarksBaseballCards/Database=Website_Application_MarksBaseballCardsDb/g' .env
+        if ! grep -Eq '^ConnectionStrings__Default=.*Database=Website_Application_MarksBaseballCardsDb([;]|$)' .env; then
+          echo "::error::ENV_FILE must define ConnectionStrings__Default for Website_Application_MarksBaseballCardsDb."
+          exit 1
+        fi
+
+    - name: Build and replace container on 206
+      run: docker compose up -d --build --remove-orphans
+
+    - name: Health check
+      run: curl --fail --silent --show-error --output /dev/null --retry 30 --retry-all-errors --retry-delay 3 http://192.168.1.206:8090/
+
+    - name: Prune dangling images on 206
+      if: success()
+      run: docker image prune -f
+
+    - name: Remove .env
+      if: always()
+      run: rm -f .env

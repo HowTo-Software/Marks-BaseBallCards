@@ -85,5 +85,6 @@ If the UI is old after a rebuild, reload with browser cache disabled and compare
 served assets to the expected revision. More diagnostics are in the
 [runbook](../phase-6-operations/runbook.md).
 
-No automated test project or committed CI workflow exists in this snapshot. A
-build is a compilation check, not confirmation of staff operations or payment.
+No automated test project exists. The committed workflow builds the API for pull
+requests but does not test browser behavior. A build is a compilation check, not
+confirmation of staff operations or payment.

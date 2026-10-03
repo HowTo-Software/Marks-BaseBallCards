@@ -1,31 +1,34 @@
 # CI/CD status
 
-**Status:** no committed pipeline in the reviewed snapshot.
+**Status:** one committed API build and deployment workflow; no automated test project.
 **Updated:** October 3, 2026.
 
-No `.github/workflows`, other committed pipeline configuration or automated test
-project was found at the reviewed frontend revision. The Dockerfile and Compose
-file describe packaging/runtime commands, not a continuous delivery pipeline.
+[`deploy.yml`](../../.github/workflows/deploy.yml) builds the API in Release
+configuration on pull requests to `main`. On pushes to `main` and manual dispatch,
+it also runs a deployment job on the configured self-hosted runner. That job writes
+the `ENV_FILE` secret to a temporary `.env`, updates the database name, rebuilds the
+Compose service on the deployment host, checks the HTTP endpoint and removes `.env`.
+The workflow does not run automated tests or verify browser behavior.
 
-## Documented current path
+## Evidence and boundaries
 
-Developers can restore/build the client, perform the documented manual review and
-publish the API-hosted artifact. Commands are in
-[onboarding](../phase-3-development/onboarding.md) and
-[deployment guide](deployment-guide.md). Earlier implementation results are in
-[the test plan](../phase-4-testing/test-plan.md).
+The workflow confirms the configured build/deploy steps, not their production
+readiness or a successful release. No live runner, deployment, database migration,
+TLS termination, rollback or payment operation was inspected for this frontend
+documentation work. The documented manual review process remains in the
+[test plan](../phase-4-testing/test-plan.md).
 
 ## Pending Hank / maintainer
 
-If an external pipeline exists, document its provider, trigger branches, build
-commands, artifact identity, configuration injection, required checks, deployment
-target and rollback procedure from its actual configuration. No pipeline URL,
-deployment token, release approval policy or coverage threshold is invented here.
+Document the runner and host ownership, secret provisioning/rotation, database
+backup and migration recovery, TLS/proxy configuration, deployment verification and
+rollback process. No deployment token, release approval policy or coverage threshold
+is inferred from the workflow.
 
-Automated browser/API tests and continuous dependency checks are **N/A as existing
-pipeline stages**. They may be added in future work with an implementation and
+Automated browser/API tests and continuous dependency checks are not configured
+pipeline stages. They may be added in future work with an implementation and
 execution evidence.
 
-The template's `.github` directory was not copied. Only genuinely needed GitHub
-files should be added when the project has an approved workflow or template;
-Copilot/VS Code histories, chat sessions, transcripts and logs do not belong there.
+The template's `.github` directory was not copied. The existing workflow is
+documented from its checked-in configuration; Copilot/VS Code histories, chat
+sessions, transcripts and logs do not belong there.

@@ -81,6 +81,13 @@ Start with the [documentation index](docs/README.md), or go directly to:
 - [User guide](docs/user/user-guide.md)
 - [Preview screenshots](docs/screenshots/README.md)
 
+## Local API development example
+
+```powershell
+$env:ConnectionStrings__Default = "Server=192.168.1.212,1433;Database=Website_Application_MarksBaseballCardsDb;User Id=sa;Password=...;TrustServerCertificate=True"
+dotnet run --project src/Api
+```
+
 ## Current validation and release limits
 
 The October 2 implementation notes record a successful client build and public UI
@@ -88,10 +95,12 @@ inspection in Chromium, including themes, languages and mobile layouts. They als
 record an existing API dependency warning. This documentation reorganization does
 not constitute a new build, security audit or deployment verification.
 
-No automated test suite or GitHub Actions workflow is committed. Authenticated staff
-mutations, a production database, real payments and fulfillment were not exercised
-during the frontend review. Remaining backend/deployment findings and integration
-work are recorded in the [handoff](docs/phase-1-inception/repository-assessment.md).
+No automated test suite is committed. The GitHub Actions workflow builds the API on
+pull requests and deploys on pushes to `main` or manual dispatch; it does not verify
+browser behavior. Authenticated staff mutations, a production database, real payments
+and fulfillment were not exercised during the frontend review. See the
+[CI/CD notes](docs/phase-5-deployment/ci-cd.md) and the
+[handoff](docs/phase-1-inception/repository-assessment.md).
 
 ## Contributions, security and licensing
 

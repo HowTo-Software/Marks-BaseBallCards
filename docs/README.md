@@ -61,7 +61,7 @@ implemented choices retrospectively; they do not invent meeting notes or approva
 | Disaster-recovery plan | **N/A as a standalone frontend plan.** This client has no authoritative database. Asset recovery is in the runbook; database backups, RPO/RTO and payment reconciliation require Hank's infrastructure evidence. |
 | Generic bug and release templates | Omitted. Concrete review cases, contribution instructions and release notes are more useful for this delivery. |
 | Code of conduct and supported-version policy | **Pending maintainer policy.** No approved policy, contact or version matrix was provided. |
-| Template `.github` files | Nothing copied. No CI workflow is present in this snapshot. Copilot sessions, transcripts, editor histories and debug logs are excluded. |
+| Template `.github` files | Nothing copied. The repository's build/deploy workflow is documented from its checked-in configuration; Copilot sessions, transcripts, editor histories and debug logs are excluded. |
 
 ## Preserved documents
 

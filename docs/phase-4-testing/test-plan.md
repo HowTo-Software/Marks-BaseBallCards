@@ -16,9 +16,11 @@ tests were run for the documentation reorganization.
 | Public desktop/mobile visual inspection | [Preview gallery](../screenshots/README.md), [theme/language guide](../phase-3-development/themes-and-languages.md) | Public appearance, language/theme surfaces and standalone unavailable states | Screenshots are captures, not automated assertions |
 | Source-code security/data review | [Preserved guide](../security/security-review.md) | Source locations, findings and original workbook/seed observations | Not a penetration test or physical-card certification |
 
-No test project, browser test suite or committed CI workflow is present. External
-capture tooling used during the visual review was not added as a repository test
-harness. Do not describe `dotnet test` as an established project verification command.
+No test project or browser test suite is present. The committed
+[workflow](../phase-5-deployment/ci-cd.md) builds the API but does not run tests.
+External capture tooling used during the visual review was not added as a repository
+test harness. Do not describe `dotnet test` as an established project verification
+command.
 
 ## Review environments
 
