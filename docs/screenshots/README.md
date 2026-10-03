@@ -16,7 +16,7 @@ Captured from the local Blazor client on October 2, 2026.
 
 The collection uses the actual 64-record original checklist. The unavailable marketplace capture reflects the standalone client running without a configured API. Staff accounts and real payments were not simulated.
 
-See [the frontend reference notes](../UI_REFERENCES.md) for the implementation and runtime requirements.
+See [the frontend reference notes](../phase-2-design/ui-references.md) for the implementation and runtime requirements.
 
 ## Dark theme and languages
 
@@ -35,4 +35,4 @@ See [the frontend reference notes](../UI_REFERENCES.md) for the implementation a
 - [Dark Spanish collection story](about-dark-es.png)
 - [Dark Spanish marketplace — unavailable service state](marketplace-dark-es.png)
 
-See [Themes and Languages](../THEMES_AND_LANGUAGES.md) for the controls and translation scope.
+See [Themes and Languages](../phase-3-development/themes-and-languages.md) for the controls and translation scope.
