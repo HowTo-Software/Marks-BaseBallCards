@@ -1,129 +1,111 @@
-# ⚾ Mark's Baseball Cards
+# Mark's Baseball Cards
 
-A .NET 10 web application for the **1991 Topps** baseball card set — browse a public
-marketplace, buy cards online via **Stripe**, manage the collection as an admin, and
-review statistics & history as a system admin. Everything runs in Docker and connects
-to an existing T-SQL (SQL Server) database.
+An application for exploring Mark's 1991 Topps collection, viewing live sale listings,
+buying through Stripe Checkout, and managing inventory through staff workspaces.
+The HTS frontend uses Blazor WebAssembly with an editorial visual identity, light and
+dark themes, and English, Brazilian Portuguese and Spanish interfaces.
 
-For code-level security findings, exact file locations, and remediation guidance, see the [Security Validation and Remediation Guide](SECURITY_REVIEW.md).
+**Documentation scope:** the frontend contribution delivered in commit
+[`39a8ecc`](https://github.com/HowTo-Software/Marks-BaseBallCards/commit/39a8ecc90bcca4a0eb0d109360f7bae42d4f1e76).
+Backend code is described where it affects the client. Hank's backend restructuring,
+production infrastructure and operational procedures require his documentation and
+validation. See the [assessment and handoff](docs/phase-1-inception/repository-assessment.md).
 
-## Frontend experience
+## Preview the frontend
 
-The frontend now has an editorial identity by HTS, with a public collection archive,
-live marketplace, collection story, and matching staff workspaces. Motion is adapted
-from OriginKit **Stagger Text Rise** and Skiper UI **Card stack scroll**.
-
-Use the header controls to switch between light/dark themes and **English, Brazilian
-Portuguese or Spanish**. Choices are saved in your browser. Prices remain in USD.
-See [Themes and Languages](docs/THEMES_AND_LANGUAGES.md) for coverage and implementation.
-
-For the component sources, licensing, data notes and implementation details, see
-[Frontend Experience and Motion References](docs/UI_REFERENCES.md).
-
-To preview the frontend with a .NET 10 SDK:
+Install the .NET 10 SDK, open a terminal at the repository root, then run:
 
 ```powershell
+dotnet restore src/Client/MarksBaseballCards.Client.csproj
 dotnet run --project src/Client --no-launch-profile --urls http://localhost:5248
 ```
 
-Open <http://localhost:5248>. The original 64-record archive works in this standalone
-preview. The live marketplace, staff sign-in and payments need the configured API,
-SQL Server and Stripe services described below. The API serves the client and API
-from one origin; the standalone preview does not proxy API requests.
+Open [localhost:5248](http://localhost:5248). Home, the collection archive and the
+collection story work with local assets. The marketplace, staff login, inventory,
+dashboard and payments require the configured backend.
 
-## Architecture
+The client sends API requests to its own origin. The standalone preview does not
+proxy requests to a separately started API. For the integrated experience, use the
+frontend served by the API, as explained in [onboarding](docs/phase-3-development/onboarding.md)
+and the [backend reference](docs/phase-5-deployment/backend-reference.md).
 
-| Project | Type | Role |
-|---|---|---|
-| `src/Client` | Blazor WebAssembly | C# frontend (public + admin UI) |
-| `src/Api` | ASP.NET Core Web API | REST API + JWT auth + Stripe; also hosts the WASM client |
-| `src/Shared` | Class library | DTOs shared by client and API |
+## What is in the application?
 
-Data access uses **EF Core 10** against SQL Server. The API container serves both the
-API (`/api/...`) and the compiled Blazor client from a single origin.
+| Experience | Routes | Data and access |
+| --- | --- | --- |
+| Introduction and collection story | `/`, `/about` | Local content and original illustrations |
+| Original archive | `/collection` | 64 historical records; search, filters, sorting, grid/list views and dialogs |
+| Live marketplace | `/marketplace` | API listings, condition, notes, USD prices and Stripe Checkout |
+| Staff access | `/login` | Owner-provided accounts; no public registration flow |
+| Inventory workspace | `/admin` | `Admin` role; create/edit, list, record sales and delete |
+| Statistics and activity | `/system` | `SystemAdmin` role; current inventory, six filing sets and up to 200 history entries |
+| Payment status | `/buy/success` | Confirms payment only when the API reports `paid` |
 
-### Three experiences
-- **Public (anonymous):** original collection archive, live marketplace and Stripe Checkout.
-- **Admin (`Admin` role):** full CRUD over the collection, list/unlist, record sales.
-- **System admin (`SystemAdmin` role):** statistics dashboard and full activity history.
+`Admin` and `SystemAdmin` are distinct roles. The browser's route checks help guide
+navigation; the API enforces authorization.
 
-## Prerequisites
-- Docker + Docker Compose
-- An existing SQL Server reachable at `192.168.1.212:1433`
-- (Optional) A Stripe account for online payments
+### How to interpret the collection
 
-## Configuration
-Copy the example env file and fill in real values (it is gitignored):
+The archive is a snapshot of the supplied checklist, separate from current inventory.
+It is not proof that a card is in stock or for sale. Covers are original record
+illustrations, rather than physical card scans or grading certificates. Rookie and
+Royals markers retain the collector's annotations. Filing percentages describe the
+records currently in the database. Language selection changes formatting and copy;
+prices remain in USD.
+
+## Repository map
+
+| Location | Responsibility |
+| --- | --- |
+| [src/Client](src/Client) | Blazor pages, components, browser authentication, localization, CSS and JavaScript |
+| [src/Shared](src/Shared) | DTOs and role names shared with the client |
+| [src/Api](src/Api) | ASP.NET Core API, SQL Server/EF Core, JWT, Stripe and hosting of the client |
+| [docker-compose.yml](docker-compose.yml) | Existing web container configuration; no database service |
+| [docs](docs/README.md) | Documentation organized by lifecycle phase |
+
+There is no npm build pipeline in this repository. The frontend uses Razor, C#, CSS
+and native browser JavaScript. Dependencies and hosting boundaries are detailed in
+[architecture](docs/phase-2-design/architecture.md).
+
+## Documentation
+
+Start with the [documentation index](docs/README.md), or go directly to:
+
+- [Environment and development setup](docs/phase-3-development/onboarding.md)
+- [Frontend design and source map](docs/phase-2-design/technical-design.md)
+- [Client/API contracts](docs/phase-2-design/api-specification.md)
+- [Themes and translation maintenance](docs/phase-3-development/themes-and-languages.md)
+- [Review evidence and manual checks](docs/phase-4-testing/test-plan.md)
+- [Publishing the frontend with the existing host](docs/phase-5-deployment/deployment-guide.md)
+- [Security findings and recommendations](docs/security/security-review.md)
+- [User guide](docs/user/user-guide.md)
+- [Preview screenshots](docs/screenshots/README.md)
+
+## Local API development example
 
 ```powershell
-Copy-Item .env.example .env
-```
-
-At minimum set `ConnectionStrings__Default`, a strong `Jwt__Key` (≥ 32 chars), and the
-two seed passwords. Add Stripe keys to enable buying.
-
-## Run with Docker
-
-```powershell
-docker compose up --build -d
-```
-
-Then open <http://localhost:8090> (or `http://<docker-host>:8090`, e.g.
-<http://192.168.1.202:8090>). On first start the API creates the
-`Website_Application_MarksBaseballCardsDb` database, applies migrations, and seeds the
-64 cards plus the two admin accounts.
-
-## Database migration
-
-`MarksBaseballCards` was copied to `Website_Application_MarksBaseballCardsDb` using a
-verified SQL Server backup and restore, preserving its schema, stored procedures, EF
-migration history, and data. The source database was left unchanged. The destination
-was verified with 64 cards, 3 users, and 30 history records at migration time.
-
-The deployment workflow redirects `ConnectionStrings__Default` from the old database
-name to the new one when it writes the existing GitHub Actions `ENV_FILE` secret to
-`.env`; other secret values are preserved. The next deployment applies the new
-connection string to the running app.
-
-## Run locally (development)
-
-```powershell
-# set a dev connection string (PowerShell)
 $env:ConnectionStrings__Default = "Server=192.168.1.212,1433;Database=Website_Application_MarksBaseballCardsDb;User Id=sa;Password=...;TrustServerCertificate=True"
 dotnet run --project src/Api
 ```
 
-The dev `Jwt:Key` is preset in `appsettings.Development.json`.
+## Current validation and release limits
 
-## Default accounts
-Created on first run from the seed passwords in `.env`:
+The October 2 implementation notes record a successful client build and public UI
+inspection in Chromium, including themes, languages and mobile layouts. They also
+record an existing API dependency warning. This documentation reorganization does
+not constitute a new build, security audit or deployment verification.
 
-| Username | Role | Password |
-|---|---|---|
-| `admin` | Admin | `Seed__AdminPassword` |
-| `sysadmin` | SystemAdmin | `Seed__SystemAdminPassword` |
+No automated test suite is committed. The GitHub Actions workflow builds the API on
+pull requests and deploys on pushes to `main` or manual dispatch; it does not verify
+browser behavior. Authenticated staff mutations, a production database, real payments
+and fulfillment were not exercised during the frontend review. See the
+[CI/CD notes](docs/phase-5-deployment/ci-cd.md) and the
+[handoff](docs/phase-1-inception/repository-assessment.md).
 
-**Change these before any real deployment.**
+## Contributions, security and licensing
 
-## Login security
-- PBKDF2 password hashing (`PasswordHasher`)
-- Per-IP rate limiting on `/api/auth/login`
-- Account lockout after 5 failed attempts (15 min)
-- Sign-in error handling and dummy password verification; see SEC-07 in the security guide for the remaining account-disclosure concern.
-- Short-lived HMAC-SHA256 JWTs with issuer/audience validation
-
-## Stripe
-1. Put your secret key in `Stripe__SecretKey` (test key `sk_test_...` is fine).
-2. For fulfillment, configure a webhook to `POST /api/checkout/webhook` for the
-   `checkout.session.completed` event and set `Stripe__WebhookSecret`.
-   Locally you can use the Stripe CLI:
-   ```powershell
-   stripe listen --forward-to http://localhost:8090/api/checkout/webhook
-   ```
-   (As a fallback, the success page also finalizes paid orders idempotently.)
-
-## Database migrations
-```powershell
-dotnet dotnet-ef migrations add <Name> --project src/Api --output-dir Data/Migrations
-```
-Migrations are applied automatically at API startup.
+See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) and
+[CHANGELOG.md](CHANGELOG.md). The repository had no owner-selected project license
+at the reviewed revision; [LICENSE](LICENSE) records that pending decision and does
+not grant reuse rights. Third-party font notices and component attribution are
+preserved in the [licensing notes](docs/security/compliance.md).

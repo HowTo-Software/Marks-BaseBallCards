@@ -1,0 +1,13 @@
+Project license status
+
+No owner-selected project license was present at revision
+39a8ecc90bcca4a0eb0d109360f7bae42d4f1e76.
+
+This file records a pending maintainer decision. It is not a license grant and does
+not authorize reuse, redistribution or sublicensing of this project's code or assets.
+The repository owner must select and supply the project's license terms.
+
+Third-party materials remain governed by their own terms. Font license notices
+are kept in src/Client/wwwroot/fonts/dmsans-OFL.txt and instrumentserif-OFL.txt.
+Component provenance, licensing references and attribution are recorded in
+docs/phase-2-design/ui-references.md and docs/security/compliance.md.
