@@ -6,8 +6,12 @@
 [`deploy.yml`](../../.github/workflows/deploy.yml) builds the API in Release
 configuration on pull requests to `main`. On pushes to `main` and manual dispatch,
 it also runs a deployment job on the configured self-hosted runner. That job writes
-the `ENV_FILE` secret to a temporary `.env`, updates the database name, rebuilds the
-Compose service on the deployment host, checks the HTTP endpoint and removes `.env`.
+the `ENV_FILE` secret to a temporary `.env`, updates the database name, copies the
+checkout and `.env` (mode 600) to `/opt/Marks-BaseBallCards` on the deployment host
+(192.168.1.206), rebuilds the Compose service there, checks the HTTP endpoint and
+removes the runner's copy of `.env`. Production stacks on that host live in
+`/opt/<repository name>`, never in a user's home directory; the directory is created
+once by root (`sudo install -d -o htsadmin -g htsadmin -m 750 /opt/Marks-BaseBallCards`).
 The workflow does not run automated tests or verify browser behavior.
 
 ## Evidence and boundaries

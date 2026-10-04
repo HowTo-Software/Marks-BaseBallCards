@@ -23,8 +23,10 @@ jobs:
     - name: Build
       run: dotnet build src/Api/MarksBaseballCards.Api.csproj -c Release
 
-  # Runs on the self-hosted runner on 192.168.1.210 and builds/replaces the
-  # container on 192.168.1.206 over SSH (alias marks-deploy-206 in ~/.ssh/config).
+  # Runs on the self-hosted runner on 192.168.1.210, copies the checkout to
+  # /opt/Marks-BaseBallCards on 192.168.1.206 over SSH (alias marks-deploy-206 in
+  # ~/.ssh/config) and builds/replaces the container there, so the stack is run
+  # from /opt/<repo name> on 206 rather than from the runner's work folder.
   deploy:
     needs: build
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
@@ -33,7 +35,8 @@ jobs:
       group: deploy-206
       cancel-in-progress: false
     env:
-      DOCKER_HOST: ssh://marks-deploy-206
+      DEPLOY_HOST: marks-deploy-206
+      DEPLOY_DIR: /opt/Marks-BaseBallCards
       # Same project name as the original manual deploy, so compose replaces that container.
       COMPOSE_PROJECT_NAME: marks-baseballcards
 
@@ -52,15 +55,25 @@ jobs:
           exit 1
         fi
 
+    - name: Copy to /opt/Marks-BaseBallCards on 206
+      run: |
+        if ! ssh "$DEPLOY_HOST" "test -d '$DEPLOY_DIR' && test -w '$DEPLOY_DIR'"; then
+          echo "::error::$DEPLOY_DIR must exist on 206 and be writable by the deploy user (sudo install -d -o htsadmin -g htsadmin -m 750 $DEPLOY_DIR)."
+          exit 1
+        fi
+        # .env is excluded from the tree sync (which also protects it from --delete) and sent separately as 600.
+        rsync -a --delete --chmod=D750,F640 --exclude=/.git/ --exclude=/.env ./ "$DEPLOY_HOST:$DEPLOY_DIR/"
+        rsync -p --chmod=F600 .env "$DEPLOY_HOST:$DEPLOY_DIR/.env"
+
     - name: Build and replace container on 206
-      run: docker compose up -d --build --remove-orphans
+      run: ssh "$DEPLOY_HOST" "cd '$DEPLOY_DIR' && docker compose -p '$COMPOSE_PROJECT_NAME' up -d --build --remove-orphans"
 
     - name: Health check
       run: curl --fail --silent --show-error --output /dev/null --retry 30 --retry-all-errors --retry-delay 3 http://192.168.1.206:8090/
 
     - name: Prune dangling images on 206
       if: success()
-      run: docker image prune -f
+      run: ssh "$DEPLOY_HOST" "docker image prune -f"
 
     - name: Remove .env
       if: always()
