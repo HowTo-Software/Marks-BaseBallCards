@@ -22,6 +22,9 @@ public class AuthService
 
     private const string GenericError = "Invalid username or password.";
 
+    private static string SanitizeForLog(string value) =>
+        value.Replace("\r", string.Empty).Replace("\n", string.Empty);
+
     private readonly AppDbContext _db;
     private readonly TokenService _tokens;
     private readonly HistoryWriter _history;
@@ -39,7 +42,7 @@ public class AuthService
     public async Task<(bool Ok, LoginResponse? Response, string Error)> LoginAsync(
         LoginRequest request, string clientIp)
     {
-        var username = request.Username.Trim();
+        var username = SanitizeForLog(request.Username.Trim());
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == username);
 
         if (user is null)
