@@ -62,7 +62,8 @@ jobs:
           exit 1
         fi
         # .env is excluded from the tree sync (which also protects it from --delete) and sent separately as 600.
-        rsync -a --delete --chmod=D750,F640 --exclude=/.git/ --exclude=/.env ./ "$DEPLOY_HOST:$DEPLOY_DIR/"
+        # The tree must stay world-readable: the Dockerfile COPYs it with its modes and the app runs as non-root.
+        rsync -a --delete --chmod=Dgo+rx,Fgo+r --exclude=/.git/ --exclude=/.env ./ "$DEPLOY_HOST:$DEPLOY_DIR/"
         rsync -p --chmod=F600 .env "$DEPLOY_HOST:$DEPLOY_DIR/.env"
 
     - name: Build and replace container on 206
