@@ -42,8 +42,9 @@ public class AuthService
     public async Task<(bool Ok, LoginResponse? Response, string Error)> LoginAsync(
         LoginRequest request, string clientIp)
     {
-        var username = SanitizeForLog(request.Username.Trim());
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == username);
+        var lookupUsername = request.Username.Trim();
+        var username = SanitizeForLog(lookupUsername);
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == lookupUsername);
 
         if (user is null)
         {
